@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Admin | Imports Company</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><i class="fas fa-gem"></i><span>Imports Co.</span></div>
+                <button class="sidebar-toggle" id="sidebar-toggle"><i class="fas fa-bars"></i></button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item"><a href="index.html"><i
+                                class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+                    <li class="nav-item"><a href="products.html"><i class="fas fa-box"></i><span>Produtos</span></a>
+                    </li>
+                    <li class="nav-item"><a href="categories.html"><i
+                                class="fas fa-layer-group"></i><span>Categorias</span></a></li>
+                    <li class="nav-item"><a href="banners.html"><i class="fas fa-images"></i><span>Banners</span></a>
+                    </li>
+                    <li class="nav-item"><a href="stock.html"><i class="fas fa-warehouse"></i><span>Estoque</span></a>
+                    </li>
+                    <li class="nav-item active"><a href="settings.html"><i
+                                class="fas fa-cog"></i><span>Configurações</span></a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="../" target="_blank" class="view-site-btn"><i class="fas fa-external-link-alt"></i><span>Ver
+                        Loja</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Configurações</h1>
+                    <p>Personalize sua loja</p>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <form id="settings-form" class="settings-form">
+                    <!-- General Settings -->
+                    <div class="settings-section">
+                        <h2><i class="fas fa-store"></i> Informações da Loja</h2>
+                        <div class="form-row two-cols">
+                            <div class="form-group">
+                                <label for="site-name">Nome da Loja</label>
+                                <input type="text" id="site-name">
+                            </div>
+                            <div class="form-group">
+                                <label for="whatsapp">WhatsApp (com DDD)</label>
+                                <input type="text" id="whatsapp" placeholder="5531999999999">
+                            </div>
+                        </div>
+                        <div class="form-row two-cols">
+                            <div class="form-group">
+                                <label for="email">E-mail de Contato</label>
+                                <input type="email" id="email">
+                            </div>
+                            <div class="form-group">
+                                <label for="free-shipping">Frete Grátis (R$)</label>
+                                <input type="number" id="free-shipping" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Logo da Loja</label>
+                            <div class="logo-upload">
+                                <div class="current-logo" id="current-logo">
+                                    <img src="" alt="Logo">
+                                </div>
+                                <div class="upload-btn-wrapper">
+                                    <input type="file" id="logo-file" accept="image/*">
+                                    <button type="button" class="btn btn-outline">
+                                        <i class="fas fa-upload"></i> Alterar Logo
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="logo-path">
+                        </div>
+                    </div>
+
+                    <!-- Colors Settings -->
+                    <div class="settings-section">
+                        <h2><i class="fas fa-palette"></i> Cores do Site</h2>
+                        <div class="colors-grid">
+                            <div class="color-picker">
+                                <label for="color-navy">Azul Principal</label>
+                                <input type="color" id="color-navy" value="#0a1628">
+                                <span class="color-code" id="code-navy">#0a1628</span>
+                            </div>
+                            <div class="color-picker">
+                                <label for="color-navy-light">Azul Claro</label>
+                                <input type="color" id="color-navy-light" value="#1a2744">
+                                <span class="color-code" id="code-navy-light">#1a2744</span>
+                            </div>
+                            <div class="color-picker">
+                                <label for="color-gold">Dourado</label>
+                                <input type="color" id="color-gold" value="#c9a84c">
+                                <span class="color-code" id="code-gold">#c9a84c</span>
+                            </div>
+                            <div class="color-picker">
+                                <label for="color-gold-light">Dourado Claro</label>
+                                <input type="color" id="color-gold-light" value="#d4b86a">
+                                <span class="color-code" id="code-gold-light">#d4b86a</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Links -->
+                    <div class="settings-section">
+                        <h2><i class="fas fa-share-alt"></i> Redes Sociais</h2>
+                        <div class="form-row three-cols">
+                            <div class="form-group">
+                                <label for="instagram"><i class="fab fa-instagram"></i> Instagram</label>
+                                <input type="url" id="instagram" placeholder="https://instagram.com/...">
+                            </div>
+                            <div class="form-group">
+                                <label for="facebook"><i class="fab fa-facebook"></i> Facebook</label>
+                                <input type="url" id="facebook" placeholder="https://facebook.com/...">
+                            </div>
+                            <div class="form-group">
+                                <label for="tiktok"><i class="fab fa-tiktok"></i> TikTok</label>
+                                <input type="url" id="tiktok" placeholder="https://tiktok.com/...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Announcements -->
+                    <div class="settings-section">
+                        <h2><i class="fas fa-bullhorn"></i> Barra de Anúncios</h2>
+                        <div class="form-group">
+                            <label for="ann-shipping">Mensagem de Frete</label>
+                            <input type="text" id="ann-shipping"
+                                placeholder="FRETE GRÁTIS para compras acima de R$ 999">
+                        </div>
+                        <div class="form-row two-cols">
+                            <div class="form-group">
+                                <label for="ann-authentic">Mensagem de Autenticidade</label>
+                                <input type="text" id="ann-authentic" placeholder="Produtos 100% Originais">
+                            </div>
+                            <div class="form-group">
+                                <label for="ann-payment">Mensagem de Pagamento</label>
+                                <input type="text" id="ann-payment" placeholder="Parcelamos em até 12x">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i>
+                            <span>Salvar Configurações</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let settings = {};
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+            await loadSettings();
+
+            document.getElementById('settings-form').addEventListener('submit', saveSettings);
+            document.getElementById('logo-file').addEventListener('change', handleLogoUpload);
+            document.getElementById('sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+
+            // Color pickers
+            document.querySelectorAll('.color-picker input[type="color"]').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const code = e.target.closest('.color-picker').querySelector('.color-code');
+                    code.textContent = e.target.value;
+                });
+            });
+        });
+
+        async function loadSettings() {
+            settings = await apiRequest('/api/settings');
+
+            // Populate form
+            document.getElementById('site-name').value = settings.siteName || '';
+            document.getElementById('whatsapp').value = settings.whatsapp || '';
+            document.getElementById('email').value = settings.email || '';
+            document.getElementById('free-shipping').value = settings.freeShippingThreshold || 999;
+            document.getElementById('logo-path').value = settings.logo || '';
+
+            if (settings.logo) {
+                document.querySelector('#current-logo img').src = `../${settings.logo}`;
+            }
+
+            // Colors
+            if (settings.colors) {
+                document.getElementById('color-navy').value = settings.colors.primaryNavy || '#0a1628';
+                document.getElementById('color-navy-light').value = settings.colors.primaryNavyLight || '#1a2744';
+                document.getElementById('color-gold').value = settings.colors.gold || '#c9a84c';
+                document.getElementById('color-gold-light').value = settings.colors.goldLight || '#d4b86a';
+
+                document.getElementById('code-navy').textContent = settings.colors.primaryNavy || '#0a1628';
+                document.getElementById('code-navy-light').textContent = settings.colors.primaryNavyLight || '#1a2744';
+                document.getElementById('code-gold').textContent = settings.colors.gold || '#c9a84c';
+                document.getElementById('code-gold-light').textContent = settings.colors.goldLight || '#d4b86a';
+            }
+
+            // Social
+            if (settings.socialLinks) {
+                document.getElementById('instagram').value = settings.socialLinks.instagram || '';
+                document.getElementById('facebook').value = settings.socialLinks.facebook || '';
+                document.getElementById('tiktok').value = settings.socialLinks.tiktok || '';
+            }
+
+            // Announcements
+            if (settings.announcements) {
+                document.getElementById('ann-shipping').value = settings.announcements.freeShipping || '';
+                document.getElementById('ann-authentic').value = settings.announcements.authentic || '';
+                document.getElementById('ann-payment').value = settings.announcements.payment || '';
+            }
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+
+            const data = {
+                siteName: document.getElementById('site-name').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                email: document.getElementById('email').value,
+                freeShippingThreshold: parseInt(document.getElementById('free-shipping').value),
+                logo: document.getElementById('logo-path').value,
+                colors: {
+                    primaryNavy: document.getElementById('color-navy').value,
+                    primaryNavyLight: document.getElementById('color-navy-light').value,
+                    gold: document.getElementById('color-gold').value,
+                    goldLight: document.getElementById('color-gold-light').value
+                },
+                socialLinks: {
+                    instagram: document.getElementById('instagram').value,
+                    facebook: document.getElementById('facebook').value,
+                    tiktok: document.getElementById('tiktok').value
+                },
+                announcements: {
+                    freeShipping: document.getElementById('ann-shipping').value,
+                    authentic: document.getElementById('ann-authentic').value,
+                    payment: document.getElementById('ann-payment').value
+                }
+            };
+
+            try {
+                await apiRequest('/api/settings', 'PUT', data);
+                showToast('Configurações salvas com sucesso!');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function handleLogoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+
+                document.getElementById('logo-path').value = data.path;
+                document.querySelector('#current-logo img').src = `../${data.path}`;
+                showToast('Logo atualizada!');
+            } catch (error) {
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

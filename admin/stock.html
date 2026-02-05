@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque - Admin | Imports Company</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><i class="fas fa-gem"></i><span>Imports Co.</span></div>
+                <button class="sidebar-toggle" id="sidebar-toggle"><i class="fas fa-bars"></i></button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item"><a href="index.html"><i
+                                class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+                    <li class="nav-item"><a href="products.html"><i class="fas fa-box"></i><span>Produtos</span></a>
+                    </li>
+                    <li class="nav-item"><a href="categories.html"><i
+                                class="fas fa-layer-group"></i><span>Categorias</span></a></li>
+                    <li class="nav-item"><a href="banners.html"><i class="fas fa-images"></i><span>Banners</span></a>
+                    </li>
+                    <li class="nav-item active"><a href="stock.html"><i
+                                class="fas fa-warehouse"></i><span>Estoque</span></a></li>
+                    <li class="nav-item"><a href="settings.html"><i
+                                class="fas fa-cog"></i><span>Configurações</span></a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="../" target="_blank" class="view-site-btn"><i class="fas fa-external-link-alt"></i><span>Ver
+                        Loja</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Controle de Estoque</h1>
+                    <p>Gerencie a quantidade de cada produto</p>
+                </div>
+                <div class="header-right">
+                    <div class="stock-filters">
+                        <button class="btn btn-outline active" id="filter-all">Todos</button>
+                        <button class="btn btn-outline" id="filter-low">⚠️ Estoque Baixo</button>
+                        <button class="btn btn-outline" id="filter-out">❌ Sem Estoque</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="stock-summary">
+                    <div class="summary-card">
+                        <i class="fas fa-boxes"></i>
+                        <div class="summary-info">
+                            <span id="total-items">0</span>
+                            <p>Total de Itens</p>
+                        </div>
+                    </div>
+                    <div class="summary-card warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="summary-info">
+                            <span id="low-stock-count">0</span>
+                            <p>Estoque Baixo (&lt;5)</p>
+                        </div>
+                    </div>
+                    <div class="summary-card danger">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="summary-info">
+                            <span id="out-stock-count">0</span>
+                            <p>Sem Estoque</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stock-table-container">
+                    <table class="data-table stock-table">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Categoria</th>
+                                <th>Preço</th>
+                                <th>Estoque Atual</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-table">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let products = [];
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+            await loadProducts();
+
+            document.getElementById('filter-all').addEventListener('click', () => setFilter('all'));
+            document.getElementById('filter-low').addEventListener('click', () => setFilter('low'));
+            document.getElementById('filter-out').addEventListener('click', () => setFilter('out'));
+            document.getElementById('sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+        });
+
+        async function loadProducts() {
+            products = await apiRequest('/api/products');
+            updateSummary();
+            renderStock();
+        }
+
+        function updateSummary() {
+            const total = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+            const low = products.filter(p => p.stock > 0 && p.stock < 5).length;
+            const out = products.filter(p => p.stock === 0).length;
+
+            document.getElementById('total-items').textContent = total;
+            document.getElementById('low-stock-count').textContent = low;
+            document.getElementById('out-stock-count').textContent = out;
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.stock-filters .btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`filter-${filter}`).classList.add('active');
+            renderStock();
+        }
+
+        function renderStock() {
+            let filtered = products;
+
+            if (currentFilter === 'low') {
+                filtered = products.filter(p => p.stock > 0 && p.stock < 5);
+            } else if (currentFilter === 'out') {
+                filtered = products.filter(p => p.stock === 0);
+            }
+
+            const tbody = document.getElementById('stock-table');
+
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="${p.stock === 0 ? 'out-of-stock' : p.stock < 5 ? 'low-stock' : ''}">
+                    <td>
+                        <div class="product-cell">
+                            <img src="../${p.image || 'images/placeholder.png'}" alt="${p.name}" onerror="this.src='../images/placeholder.png'">
+                            <span>${p.name}</span>
+                        </div>
+                    </td>
+                    <td>${p.category}</td>
+                    <td>R$ ${p.price.toFixed(2).replace('.', ',')}</td>
+                    <td>
+                        <div class="stock-control">
+                            <button class="btn-icon" onclick="updateStock(${p.id}, -1)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" value="${p.stock}" min="0" 
+                                   onchange="setStock(${p.id}, this.value)" 
+                                   class="stock-input">
+                            <button class="btn-icon" onclick="updateStock(${p.id}, 1)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="stock-status ${p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : 'ok'}">
+                            ${p.stock === 0 ? 'Sem Estoque' : p.stock < 5 ? 'Baixo' : 'OK'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateStock(id, delta) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+
+            const newStock = Math.max(0, product.stock + delta);
+            await setStock(id, newStock);
+        }
+
+        async function setStock(id, value) {
+            const stock = parseInt(value) || 0;
+
+            try {
+                await apiRequest(`/api/products/${id}`, 'PUT', { stock });
+
+                const product = products.find(p => p.id === id);
+                if (product) product.stock = stock;
+
+                updateSummary();
+                renderStock();
+                showToast('Estoque atualizado!');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

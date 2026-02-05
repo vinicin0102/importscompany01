@@ -1,0 +1,66 @@
+[
+  {
+    "id": "bags",
+    "name": "Bolsas",
+    "icon": "fa-bag-shopping",
+    "description": "Marcas Exclusivas",
+    "active": true,
+    "order": 1
+  },
+  {
+    "id": "sneakers",
+    "name": "Tênis",
+    "icon": "fa-shoe-prints",
+    "description": "Conforto e Estilo",
+    "active": true,
+    "order": 2
+  },
+  {
+    "id": "womens-fashion",
+    "name": "Moda Feminina",
+    "icon": "fa-person-dress",
+    "description": "Tendências Globais",
+    "active": true,
+    "order": 3
+  },
+  {
+    "id": "mens-fashion",
+    "name": "Moda Masculina",
+    "icon": "fa-shirt",
+    "description": "Elegância Moderna",
+    "active": true,
+    "order": 4
+  },
+  {
+    "id": "wallets",
+    "name": "Carteiras",
+    "icon": "fa-wallet",
+    "description": "Couro Legítimo",
+    "active": true,
+    "order": 5
+  },
+  {
+    "id": "watches",
+    "name": "Relógios",
+    "icon": "fa-clock",
+    "description": "Sofisticação",
+    "active": true,
+    "order": 6
+  },
+  {
+    "id": "bodysplash",
+    "name": "Body Splash",
+    "icon": "fa-spray-can-sparkles",
+    "description": "Fragrâncias Leves",
+    "active": true,
+    "order": 7
+  },
+  {
+    "id": "vitamins",
+    "name": "Vitaminas",
+    "icon": "fa-pills",
+    "description": "Saúde e Bem-estar",
+    "active": true,
+    "order": 8
+  }
+]

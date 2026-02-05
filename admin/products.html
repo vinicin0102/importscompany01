@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - Admin | Imports Company</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-gem"></i>
+                    <span>Imports Co.</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item">
+                        <a href="index.html">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="products.html">
+                            <i class="fas fa-box"></i>
+                            <span>Produtos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="categories.html">
+                            <i class="fas fa-layer-group"></i>
+                            <span>Categorias</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="banners.html">
+                            <i class="fas fa-images"></i>
+                            <span>Banners</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="stock.html">
+                            <i class="fas fa-warehouse"></i>
+                            <span>Estoque</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="settings.html">
+                            <i class="fas fa-cog"></i>
+                            <span>Configurações</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="../" target="_blank" class="view-site-btn">
+                    <i class="fas fa-external-link-alt"></i>
+                    <span>Ver Loja</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Produtos</h1>
+                    <p>Gerencie os produtos da sua loja</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" id="btn-new-product">
+                        <i class="fas fa-plus"></i>
+                        <span>Novo Produto</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Search and Filter -->
+                <div class="filters-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Buscar produtos...">
+                    </div>
+                    <select id="filter-category" class="filter-select">
+                        <option value="">Todas Categorias</option>
+                    </select>
+                    <select id="filter-status" class="filter-select">
+                        <option value="">Todos Status</option>
+                        <option value="active">Ativos</option>
+                        <option value="inactive">Inativos</option>
+                    </select>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="products-grid" id="products-grid">
+                    <!-- Products loaded dynamically -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal-overlay" id="product-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Novo Produto</h2>
+                <button class="modal-close" id="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="product-form" class="modal-body">
+                <input type="hidden" id="product-id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="product-name">Nome do Produto *</label>
+                        <input type="text" id="product-name" required>
+                    </div>
+                </div>
+
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label for="product-category">Categoria *</label>
+                        <select id="product-category" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-badge">Badge</label>
+                        <select id="product-badge">
+                            <option value="">Nenhum</option>
+                            <option value="hot">🔥 Mais Vendido</option>
+                            <option value="new">Novo</option>
+                            <option value="discount">Desconto</option>
+                            <option value="exclusive">Exclusivo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label for="product-price">Preço (R$) *</label>
+                        <input type="number" id="product-price" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-old-price">Preço Antigo (R$)</label>
+                        <input type="number" id="product-old-price" step="0.01">
+                    </div>
+                </div>
+
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label for="product-stock">Estoque *</label>
+                        <input type="number" id="product-stock" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-active">Status</label>
+                        <select id="product-active">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Imagem do Produto</label>
+                    <div class="image-upload">
+                        <input type="file" id="product-image-file" accept="image/*">
+                        <div class="image-preview" id="image-preview">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Clique ou arraste uma imagem</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="product-image">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        <span>Salvar Produto</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2>Confirmar Exclusão</h2>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir este produto?</p>
+                <p class="text-muted">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-cancel-delete">Cancelar</button>
+                <button class="btn btn-danger" id="btn-confirm-delete">
+                    <i class="fas fa-trash"></i>
+                    <span>Excluir</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let products = [];
+        let categories = [];
+        let editingId = null;
+        let deletingId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+
+            // Load categories first
+            categories = await apiRequest('/api/categories');
+            const categorySelect = document.getElementById('product-category');
+            const filterCategory = document.getElementById('filter-category');
+
+            categories.forEach(cat => {
+                categorySelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                filterCategory.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+
+            // Load products
+            await loadProducts();
+
+            // Event listeners
+            document.getElementById('btn-new-product').addEventListener('click', openNewProductModal);
+            document.getElementById('modal-close').addEventListener('click', closeModal);
+            document.getElementById('btn-cancel').addEventListener('click', closeModal);
+            document.getElementById('product-form').addEventListener('submit', saveProduct);
+            document.getElementById('search-input').addEventListener('input', filterProducts);
+            document.getElementById('filter-category').addEventListener('change', filterProducts);
+            document.getElementById('filter-status').addEventListener('change', filterProducts);
+            document.getElementById('btn-cancel-delete').addEventListener('click', () => {
+                document.getElementById('delete-modal').classList.remove('active');
+            });
+            document.getElementById('btn-confirm-delete').addEventListener('click', confirmDelete);
+
+            // Image upload
+            document.getElementById('product-image-file').addEventListener('change', handleImageUpload);
+
+            // Sidebar toggle
+            document.getElementById('sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+
+            // Check URL params for action
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                openNewProductModal();
+            }
+        });
+
+        async function loadProducts() {
+            products = await apiRequest('/api/products');
+            renderProducts(products);
+        }
+
+        function renderProducts(list) {
+            const grid = document.getElementById('products-grid');
+
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <h3>Nenhum produto encontrado</h3>
+                        <p>Clique em "Novo Produto" para adicionar.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = list.map(p => `
+                <div class="product-card-admin ${!p.active ? 'inactive' : ''}">
+                    <div class="product-image">
+                        <img src="../${p.image || 'images/placeholder.png'}" alt="${p.name}" onerror="this.src='../images/placeholder.png'">
+                        ${p.badge ? `<span class="badge badge-${p.badge}">${getBadgeText(p.badge)}</span>` : ''}
+                    </div>
+                    <div class="product-info">
+                        <h3>${p.name}</h3>
+                        <p class="category">${getCategoryName(p.category)}</p>
+                        <div class="price-stock">
+                            <span class="price">R$ ${p.price.toFixed(2).replace('.', ',')}</span>
+                            <span class="stock ${p.stock < 5 ? 'low' : ''}">${p.stock} un.</span>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn-icon btn-edit" onclick="editProduct(${p.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteProduct(${p.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getBadgeText(badge) {
+            const badges = {
+                'hot': '🔥 Mais Vendido',
+                'new': 'Novo',
+                'discount': 'Desconto',
+                'exclusive': 'Exclusivo'
+            };
+            return badges[badge] || badge;
+        }
+
+        function getCategoryName(catId) {
+            const cat = categories.find(c => c.id === catId);
+            return cat ? cat.name : catId;
+        }
+
+        function filterProducts() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const category = document.getElementById('filter-category').value;
+            const status = document.getElementById('filter-status').value;
+
+            let filtered = products.filter(p => {
+                if (search && !p.name.toLowerCase().includes(search)) return false;
+                if (category && p.category !== category) return false;
+                if (status === 'active' && !p.active) return false;
+                if (status === 'inactive' && p.active) return false;
+                return true;
+            });
+
+            renderProducts(filtered);
+        }
+
+        function openNewProductModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Novo Produto';
+            document.getElementById('product-form').reset();
+            document.getElementById('product-id').value = '';
+            document.getElementById('image-preview').innerHTML = `
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Clique ou arraste uma imagem</span>
+            `;
+            document.getElementById('product-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('product-modal').classList.remove('active');
+        }
+
+        async function editProduct(id) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Editar Produto';
+            document.getElementById('product-id').value = id;
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-category').value = product.category;
+            document.getElementById('product-badge').value = product.badge || '';
+            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-old-price').value = product.oldPrice || '';
+            document.getElementById('product-stock').value = product.stock;
+            document.getElementById('product-active').value = product.active.toString();
+            document.getElementById('product-image').value = product.image || '';
+
+            if (product.image) {
+                document.getElementById('image-preview').innerHTML = `
+                    <img src="../${product.image}" alt="Preview">
+                `;
+            }
+
+            document.getElementById('product-modal').classList.add('active');
+        }
+
+        async function saveProduct(e) {
+            e.preventDefault();
+
+            const productData = {
+                name: document.getElementById('product-name').value,
+                category: document.getElementById('product-category').value,
+                badge: document.getElementById('product-badge').value,
+                price: parseFloat(document.getElementById('product-price').value),
+                oldPrice: parseFloat(document.getElementById('product-old-price').value) || null,
+                stock: parseInt(document.getElementById('product-stock').value),
+                active: document.getElementById('product-active').value === 'true',
+                image: document.getElementById('product-image').value,
+                rating: 5,
+                reviews: 0
+            };
+
+            try {
+                if (editingId) {
+                    await apiRequest(`/api/products/${editingId}`, 'PUT', productData);
+                    showToast('Produto atualizado com sucesso!');
+                } else {
+                    await apiRequest('/api/products', 'POST', productData);
+                    showToast('Produto criado com sucesso!');
+                }
+
+                closeModal();
+                await loadProducts();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function deleteProduct(id) {
+            deletingId = id;
+            document.getElementById('delete-modal').classList.add('active');
+        }
+
+        async function confirmDelete() {
+            if (!deletingId) return;
+
+            try {
+                await apiRequest(`/api/products/${deletingId}`, 'DELETE');
+                showToast('Produto excluído com sucesso!');
+                document.getElementById('delete-modal').classList.remove('active');
+                await loadProducts();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error);
+
+                document.getElementById('product-image').value = data.path;
+                document.getElementById('image-preview').innerHTML = `
+                    <img src="../${data.path}" alt="Preview">
+                `;
+                showToast('Imagem enviada com sucesso!');
+
+            } catch (error) {
+                showToast('Erro ao enviar imagem: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

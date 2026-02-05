@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorias - Admin | Imports Company</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-gem"></i>
+                    <span>Imports Co.</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item"><a href="index.html"><i
+                                class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+                    <li class="nav-item"><a href="products.html"><i class="fas fa-box"></i><span>Produtos</span></a>
+                    </li>
+                    <li class="nav-item active"><a href="categories.html"><i
+                                class="fas fa-layer-group"></i><span>Categorias</span></a></li>
+                    <li class="nav-item"><a href="banners.html"><i class="fas fa-images"></i><span>Banners</span></a>
+                    </li>
+                    <li class="nav-item"><a href="stock.html"><i class="fas fa-warehouse"></i><span>Estoque</span></a>
+                    </li>
+                    <li class="nav-item"><a href="settings.html"><i
+                                class="fas fa-cog"></i><span>Configurações</span></a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="../" target="_blank" class="view-site-btn">
+                    <i class="fas fa-external-link-alt"></i>
+                    <span>Ver Loja</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Categorias</h1>
+                    <p>Gerencie as categorias da loja</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" id="btn-new-category">
+                        <i class="fas fa-plus"></i>
+                        <span>Nova Categoria</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="categories-grid" id="categories-grid">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Category Modal -->
+    <div class="modal-overlay" id="category-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Nova Categoria</h2>
+                <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="category-form" class="modal-body">
+                <input type="hidden" id="category-id">
+
+                <div class="form-group">
+                    <label for="category-name">Nome da Categoria *</label>
+                    <input type="text" id="category-name" required placeholder="Ex: Bolsas">
+                </div>
+
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label for="category-slug">ID/Slug *</label>
+                        <input type="text" id="category-slug" required placeholder="Ex: bags">
+                    </div>
+                    <div class="form-group">
+                        <label for="category-icon">Ícone (Font Awesome)</label>
+                        <input type="text" id="category-icon" placeholder="Ex: fa-bag-shopping">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="category-description">Descrição</label>
+                    <input type="text" id="category-description" placeholder="Ex: Marcas exclusivas">
+                </div>
+
+                <div class="form-group">
+                    <label for="category-active">Status</label>
+                    <select id="category-active">
+                        <option value="true">Ativa</option>
+                        <option value="false">Inativa</option>
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        <span>Salvar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let categories = [];
+        let editingId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+
+            await loadCategories();
+
+            document.getElementById('btn-new-category').addEventListener('click', openNewModal);
+            document.getElementById('modal-close').addEventListener('click', closeModal);
+            document.getElementById('btn-cancel').addEventListener('click', closeModal);
+            document.getElementById('category-form').addEventListener('submit', saveCategory);
+            document.getElementById('sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+        });
+
+        async function loadCategories() {
+            categories = await apiRequest('/api/categories');
+            renderCategories();
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categories-grid');
+
+            grid.innerHTML = categories.map(c => `
+                <div class="category-card-admin ${!c.active ? 'inactive' : ''}">
+                    <div class="category-icon-display">
+                        <i class="fas ${c.icon}"></i>
+                    </div>
+                    <div class="category-info">
+                        <h3>${c.name}</h3>
+                        <p>${c.description || 'Sem descrição'}</p>
+                        <span class="category-slug">${c.id}</span>
+                    </div>
+                    <div class="category-actions">
+                        <button class="btn-icon btn-edit" onclick="editCategory('${c.id}')" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteCategory('${c.id}')" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openNewModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Nova Categoria';
+            document.getElementById('category-form').reset();
+            document.getElementById('category-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('category-modal').classList.remove('active');
+        }
+
+        function editCategory(id) {
+            const cat = categories.find(c => c.id === id);
+            if (!cat) return;
+
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Editar Categoria';
+            document.getElementById('category-id').value = id;
+            document.getElementById('category-name').value = cat.name;
+            document.getElementById('category-slug').value = cat.id;
+            document.getElementById('category-icon').value = cat.icon || '';
+            document.getElementById('category-description').value = cat.description || '';
+            document.getElementById('category-active').value = cat.active.toString();
+
+            document.getElementById('category-modal').classList.add('active');
+        }
+
+        async function saveCategory(e) {
+            e.preventDefault();
+
+            const data = {
+                id: document.getElementById('category-slug').value,
+                name: document.getElementById('category-name').value,
+                icon: document.getElementById('category-icon').value,
+                description: document.getElementById('category-description').value,
+                active: document.getElementById('category-active').value === 'true'
+            };
+
+            try {
+                if (editingId) {
+                    await apiRequest(`/api/categories/${editingId}`, 'PUT', data);
+                    showToast('Categoria atualizada!');
+                } else {
+                    await apiRequest('/api/categories', 'POST', data);
+                    showToast('Categoria criada!');
+                }
+                closeModal();
+                await loadCategories();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function deleteCategory(id) {
+            if (!confirm('Excluir esta categoria?')) return;
+
+            try {
+                await apiRequest(`/api/categories/${id}`, 'DELETE');
+                showToast('Categoria excluída!');
+                await loadCategories();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banners - Admin | Imports Company</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><i class="fas fa-gem"></i><span>Imports Co.</span></div>
+                <button class="sidebar-toggle" id="sidebar-toggle"><i class="fas fa-bars"></i></button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item"><a href="index.html"><i
+                                class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+                    <li class="nav-item"><a href="products.html"><i class="fas fa-box"></i><span>Produtos</span></a>
+                    </li>
+                    <li class="nav-item"><a href="categories.html"><i
+                                class="fas fa-layer-group"></i><span>Categorias</span></a></li>
+                    <li class="nav-item active"><a href="banners.html"><i
+                                class="fas fa-images"></i><span>Banners</span></a></li>
+                    <li class="nav-item"><a href="stock.html"><i class="fas fa-warehouse"></i><span>Estoque</span></a>
+                    </li>
+                    <li class="nav-item"><a href="settings.html"><i
+                                class="fas fa-cog"></i><span>Configurações</span></a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="../" target="_blank" class="view-site-btn"><i class="fas fa-external-link-alt"></i><span>Ver
+                        Loja</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Banners</h1>
+                    <p>Gerencie os banners do carrossel principal</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" id="btn-new-banner">
+                        <i class="fas fa-plus"></i>
+                        <span>Novo Banner</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="banners-list" id="banners-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Banner Modal -->
+    <div class="modal-overlay" id="banner-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2 id="modal-title">Novo Banner</h2>
+                <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="banner-form" class="modal-body">
+                <input type="hidden" id="banner-id">
+
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label for="banner-subtitle">Subtítulo (Label)</label>
+                        <input type="text" id="banner-subtitle" placeholder="Ex: Nova Coleção">
+                    </div>
+                    <div class="form-group">
+                        <label for="banner-title">Título Principal *</label>
+                        <input type="text" id="banner-title" required placeholder="Ex: Estilo Que Define">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="banner-description">Descrição</label>
+                    <textarea id="banner-description" rows="2" placeholder="Texto descritivo do banner"></textarea>
+                </div>
+
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label for="banner-button-text">Texto do Botão</label>
+                        <input type="text" id="banner-button-text" placeholder="Ex: Ver Coleção">
+                    </div>
+                    <div class="form-group">
+                        <label for="banner-button-link">Link do Botão</label>
+                        <input type="text" id="banner-button-link" placeholder="Ex: #products">
+                    </div>
+                </div>
+
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label for="banner-contain">Modo de Exibição</label>
+                        <select id="banner-contain">
+                            <option value="false">Preencher (Cover)</option>
+                            <option value="true">Mostrar Inteiro (Contain)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="banner-active">Status</label>
+                        <select id="banner-active">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Imagem do Banner</label>
+                    <div class="image-upload banner-upload">
+                        <input type="file" id="banner-image-file" accept="image/*">
+                        <div class="image-preview" id="image-preview">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Clique ou arraste uma imagem</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="banner-image">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        <span>Salvar Banner</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let banners = [];
+        let editingId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+            await loadBanners();
+
+            document.getElementById('btn-new-banner').addEventListener('click', openNewModal);
+            document.getElementById('modal-close').addEventListener('click', closeModal);
+            document.getElementById('btn-cancel').addEventListener('click', closeModal);
+            document.getElementById('banner-form').addEventListener('submit', saveBanner);
+            document.getElementById('banner-image-file').addEventListener('change', handleImageUpload);
+            document.getElementById('sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+        });
+
+        async function loadBanners() {
+            banners = await apiRequest('/api/banners');
+            renderBanners();
+        }
+
+        function renderBanners() {
+            const list = document.getElementById('banners-list');
+
+            list.innerHTML = banners.map((b, i) => `
+                <div class="banner-card-admin ${!b.active ? 'inactive' : ''}">
+                    <div class="banner-preview" style="background-image: url('../${b.image}')"></div>
+                    <div class="banner-info">
+                        <span class="banner-order">#${i + 1}</span>
+                        <h3>${b.title}</h3>
+                        <p>${b.subtitle || ''}</p>
+                    </div>
+                    <div class="banner-actions">
+                        <button class="btn-icon btn-edit" onclick="editBanner(${b.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteBanner(${b.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openNewModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Novo Banner';
+            document.getElementById('banner-form').reset();
+            document.getElementById('image-preview').innerHTML = `
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Clique ou arraste uma imagem</span>
+            `;
+            document.getElementById('banner-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('banner-modal').classList.remove('active');
+        }
+
+        function editBanner(id) {
+            const banner = banners.find(b => b.id === id);
+            if (!banner) return;
+
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Editar Banner';
+            document.getElementById('banner-id').value = id;
+            document.getElementById('banner-subtitle').value = banner.subtitle || '';
+            document.getElementById('banner-title').value = banner.title;
+            document.getElementById('banner-description').value = banner.description || '';
+            document.getElementById('banner-button-text').value = banner.buttonText || '';
+            document.getElementById('banner-button-link').value = banner.buttonLink || '';
+            document.getElementById('banner-contain').value = banner.containMode.toString();
+            document.getElementById('banner-active').value = banner.active.toString();
+            document.getElementById('banner-image').value = banner.image || '';
+
+            if (banner.image) {
+                document.getElementById('image-preview').innerHTML = `
+                    <img src="../${banner.image}" alt="Preview">
+                `;
+            }
+
+            document.getElementById('banner-modal').classList.add('active');
+        }
+
+        async function saveBanner(e) {
+            e.preventDefault();
+
+            const data = {
+                subtitle: document.getElementById('banner-subtitle').value,
+                title: document.getElementById('banner-title').value,
+                description: document.getElementById('banner-description').value,
+                buttonText: document.getElementById('banner-button-text').value,
+                buttonLink: document.getElementById('banner-button-link').value,
+                containMode: document.getElementById('banner-contain').value === 'true',
+                active: document.getElementById('banner-active').value === 'true',
+                image: document.getElementById('banner-image').value
+            };
+
+            try {
+                if (editingId) {
+                    await apiRequest(`/api/banners/${editingId}`, 'PUT', data);
+                    showToast('Banner atualizado!');
+                } else {
+                    await apiRequest('/api/banners', 'POST', data);
+                    showToast('Banner criado!');
+                }
+                closeModal();
+                await loadBanners();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function deleteBanner(id) {
+            if (!confirm('Excluir este banner?')) return;
+
+            try {
+                await apiRequest(`/api/banners/${id}`, 'DELETE');
+                showToast('Banner excluído!');
+                await loadBanners();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+
+                document.getElementById('banner-image').value = data.path;
+                document.getElementById('image-preview').innerHTML = `<img src="../${data.path}" alt="Preview">`;
+                showToast('Imagem enviada!');
+            } catch (error) {
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

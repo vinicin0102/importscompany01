@@ -1,0 +1,27 @@
+{
+  "siteName": "Imports Company",
+  "logo": "images/logo.jpg",
+  "whatsapp": "+55 31 9971-6606",
+  "email": "contato@importscompany.com.br",
+  "freeShippingThreshold": 999,
+  "colors": {
+    "primaryNavy": "#0a1628",
+    "primaryNavyLight": "#1a2744",
+    "gold": "#c9a84c",
+    "goldLight": "#d4b86a"
+  },
+  "socialLinks": {
+    "instagram": "https://instagram.com/importscompany",
+    "facebook": "",
+    "tiktok": ""
+  },
+  "announcements": {
+    "freeShipping": "FRETE GRÁTIS para compras acima de R$ 999",
+    "authentic": "Produtos 100% Originais",
+    "payment": "Parcelamos em até 12x"
+  },
+  "footer": {
+    "about": "Sua loja de importados de luxo. Produtos autênticos das melhores marcas do mundo, entregues em todo Brasil.",
+    "address": "Belo Horizonte, MG - Brasil"
+  }
+}
