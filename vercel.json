@@ -2,12 +2,16 @@
     "version": 2,
     "rewrites": [
         {
-            "source": "/api/:path*",
+            "source": "/api/:match*",
             "destination": "/server/index.js"
         },
         {
             "source": "/admin",
             "destination": "/admin/index.html"
+        },
+        {
+            "source": "/admin/:match*",
+            "destination": "/admin/:match*"
         }
     ]
 }
