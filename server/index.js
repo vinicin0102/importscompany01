@@ -22,10 +22,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..'))); // Serve the main site
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin'))); // Serve admin panel
 
-// File upload config
+// File upload config - Vercel compatible (using /tmp for temporary storage if in lambda)
+// Note: Uploads won't persist on Vercel unless using Blob storage
+const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '..', 'images');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '..', 'images'));
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueName = `${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
@@ -34,15 +36,24 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Helper functions
+// Helper functions with read-only fallback
 const readData = (filename) => {
-    const filepath = path.join(__dirname, 'data', filename);
-    return JSON.parse(fs.readFileSync(filepath, 'utf8'));
+    try {
+        const filepath = path.join(__dirname, 'data', filename);
+        return JSON.parse(fs.readFileSync(filepath, 'utf8'));
+    } catch (error) {
+        return [];
+    }
 };
 
 const writeData = (filename, data) => {
-    const filepath = path.join(__dirname, 'data', filename);
-    fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+    // In Vercel, this is temporary and won't persist
+    try {
+        const filepath = path.join(__dirname, 'data', filename);
+        fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error('Error writing data (Vercel read-only?):', error);
+    }
 };
 
 // Auth Middleware
@@ -282,13 +293,18 @@ app.get('/api/dashboard/stats', authMiddleware, (req, res) => {
     });
 });
 
-// Start Server
-app.listen(PORT, () => {
-    console.log(`
-    ╔══════════════════════════════════════════════════╗
-    ║    🛍️  IMPORTS COMPANY - Admin Server             ║
-    ║    Servidor rodando em: http://localhost:${PORT}    ║
-    ║    Painel Admin: http://localhost:${PORT}/admin     ║
-    ╚══════════════════════════════════════════════════╝
-    `);
-});
+// Export for Vercel
+module.exports = app;
+
+// Start Server locally
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`
+        ╔══════════════════════════════════════════════════╗
+        ║    🛍️  IMPORTS COMPANY - Admin Server             ║
+        ║    Servidor rodando em: http://localhost:${PORT}    ║
+        ║    Painel Admin: http://localhost:${PORT}/admin     ║
+        ╚══════════════════════════════════════════════════╝
+        `);
+    });
+}
