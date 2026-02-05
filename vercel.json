@@ -1,75 +1,13 @@
 {
     "version": 2,
-    "builds": [
+    "rewrites": [
         {
-            "src": "server/index.js",
-            "use": "@vercel/node"
+            "source": "/api/:path*",
+            "destination": "/server/index.js"
         },
         {
-            "src": "admin/**/*",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "*.html",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "*.css",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "*.js",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "images/**/*",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/server/index.js"
-        },
-        {
-            "src": "/admin/css/(.*)",
-            "dest": "/admin/css/$1"
-        },
-        {
-            "src": "/admin/js/(.*)",
-            "dest": "/admin/js/$1"
-        },
-        {
-            "src": "/admin/login.html",
-            "dest": "/admin/login.html"
-        },
-        {
-            "src": "/admin/products.html",
-            "dest": "/admin/products.html"
-        },
-        {
-            "src": "/admin/categories.html",
-            "dest": "/admin/categories.html"
-        },
-        {
-            "src": "/admin/banners.html",
-            "dest": "/admin/banners.html"
-        },
-        {
-            "src": "/admin/stock.html",
-            "dest": "/admin/stock.html"
-        },
-        {
-            "src": "/admin/settings.html",
-            "dest": "/admin/settings.html"
-        },
-        {
-            "src": "/admin",
-            "dest": "/admin/index.html"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/$1"
+            "source": "/admin",
+            "destination": "/admin/index.html"
         }
     ]
 }
