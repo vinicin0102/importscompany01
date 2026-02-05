@@ -21,12 +21,52 @@ document.addEventListener('DOMContentLoaded', function () {
    Particles Background
    ======================================== */
 
-
 /* ========================================
-   Hero Slider
+   Hero Slider (Dynamic from API)
    ======================================== */
 
-function initHeroSlider() {
+async function initHeroSlider() {
+    const sliderContainer = document.querySelector('.hero-slider');
+    if (!sliderContainer) return;
+
+    try {
+        // Tenta buscar banners da API
+        const response = await fetch('/api/banners');
+        if (response.ok) {
+            const banners = await response.json();
+            const activeBanners = banners.filter(b => b.active);
+
+            if (activeBanners.length > 0) {
+                activeBanners.sort((a, b) => a.order - b.order);
+                const oldSlides = sliderContainer.querySelectorAll('.hero-slide');
+                oldSlides.forEach(s => s.remove());
+
+                activeBanners.forEach((banner, index) => {
+                    const slide = document.createElement('div');
+                    slide.className = `hero-slide ${index === 0 ? 'active' : ''}`;
+                    const imageUrl = banner.image.startsWith('http') ? banner.image : `${banner.image}`;
+
+                    slide.innerHTML = `
+                        <div class="hero-bg" style="background-image: url('${imageUrl}');"></div>
+                        <div class="hero-overlay" style="opacity: ${banner.overlay || 0.5}"></div>
+                        <div class="hero-content ${banner.position || 'center'}">
+                            <h1 class="animate-up">${banner.title}</h1>
+                            <p class="animate-up delay-100">${banner.subtitle}</p>
+                            ${banner.buttonText ? `<a href="${banner.link || '#'}" class="btn btn-primary animate-up delay-200">${banner.buttonText} <i class="fas fa-arrow-right"></i></a>` : ''}
+                        </div>
+                    `;
+                    // Insere antes dos controles
+                    const controls = sliderContainer.querySelector('.slider-controls');
+                    if (controls) sliderContainer.insertBefore(slide, controls);
+                    else sliderContainer.appendChild(slide);
+                });
+            }
+        }
+    } catch (e) {
+        console.warn('Usando banners padrão (API offline ou erro):', e);
+    }
+
+    // Lógica do Slider
     const slides = document.querySelectorAll('.hero-slide');
     const nextBtn = document.querySelector('.slider-next');
     const prevBtn = document.querySelector('.slider-prev');
@@ -37,34 +77,35 @@ function initHeroSlider() {
     const intervalTime = 5000;
     let slideInterval;
 
-    const nextSlide = () => {
+    const showSlide = (n) => {
         slides[currentSlide].classList.remove('active');
-        currentSlide = (currentSlide + 1) % slides.length;
+        currentSlide = (n + slides.length) % slides.length;
         slides[currentSlide].classList.add('active');
     };
 
-    const prevSlide = () => {
-        slides[currentSlide].classList.remove('active');
-        currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-        slides[currentSlide].classList.add('active');
-    };
+    const nextSlideFunc = () => showSlide(currentSlide + 1);
+    const prevSlideFunc = () => showSlide(currentSlide - 1);
 
     if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            nextSlide();
+        const newNext = nextBtn.cloneNode(true);
+        nextBtn.parentNode.replaceChild(newNext, nextBtn);
+        newNext.addEventListener('click', () => {
+            nextSlideFunc();
             resetInterval();
         });
     }
 
     if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            prevSlide();
+        const newPrev = prevBtn.cloneNode(true);
+        prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+        newPrev.addEventListener('click', () => {
+            prevSlideFunc();
             resetInterval();
         });
     }
 
     function startInterval() {
-        slideInterval = setInterval(nextSlide, intervalTime);
+        slideInterval = setInterval(nextSlideFunc, intervalTime);
     }
 
     function resetInterval() {
@@ -72,7 +113,6 @@ function initHeroSlider() {
         startInterval();
     }
 
-    // Start Auto Play
     startInterval();
 }
 
@@ -804,127 +844,48 @@ window.initModal = function () {
                 quantity: 1
             };
 
-            // Get current cart
+            // Assuming cart functions are global or accessible
             let cart = JSON.parse(localStorage.getItem('importsCart')) || [];
             cart.push(product);
             localStorage.setItem('importsCart', JSON.stringify(cart));
 
-            // Trigger UI update if possible (hacky since updateCartUI is inside another scope, 
-            // but we can dispatch a custom event or reload page. ideally refactor, but for now:)
-            // Let's just create a quick notification and manually update text
+            // Se as funções de UI do carrinho forem globais:
+            // updateCartUI(); 
+            // Mas como estão dentro de initCart, não temos acesso direto sem expor.
+            // Para simplificar, vou recarregar a página ou disparar evento.
+            // O ideal seria que initCart expusesse updateCartUI.
+            // Vou apenas fechar o modal e mostrar notificação.
+
+            closeModal();
             showNotification('Produto adicionado ao carrinho!');
-            this.innerHTML = '<i class="fas fa-check"></i> <span>Adicionado!</span>';
-            setTimeout(() => {
-                this.innerHTML = '<i class="fas fa-shopping-bag"></i> <span>Adicionar ao Carrinho</span>';
-            }, 2000);
-
-            // Try to find the count element and update it blindly
-            const countJson = document.querySelector('.cart-count');
-            if (countJson) countJson.textContent = cart.length;
-        };
-
-        // Configure Buy Now Button (Integração Yampi)
-        const buyNowBtn = document.getElementById('modal-buy-now');
-        buyNowBtn.onclick = function () {
-
-            // Procura o link correspondente na lista YAMPI_LINKS
-            let checkoutLink = null;
-            for (const [key, link] of Object.entries(YAMPI_LINKS)) {
-                if (name.includes(key)) {
-                    checkoutLink = link;
-                    break;
-                }
-            }
-
-            if (checkoutLink && !checkoutLink.includes('SEU_LINK_AQUI')) {
-                // Se achou um link válido configurado
-                showNotification('Redirecionando para Pagamento Seguro...');
-                setTimeout(() => {
-                    window.open(checkoutLink, '_blank');
-                    closeModal();
-                }, 1000);
-            } else {
-                // Fallback: Se não configurou o link ainda, usa o WhatsApp ou avisa
-                console.warn('Link Yampi não configurado para: ' + name);
-
-                // Opção B: Mandar para o WhatsApp (segurança para não perder venda)
-                const message = `Olá! Quero comprar o *${name}* que vi no site por ${price}.\nComo faço para pagar?`;
-                const phone = "5531999716606";
-                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-            }
+            setTimeout(() => location.reload(), 1000); // Hack simples para atualizar carrinho
         };
     }
 
     function closeModal() {
         modalOverlay.classList.remove('open');
         document.body.style.overflow = '';
-        // Hide lens just in case
-        zoomLens.style.display = 'none';
     }
 
-    // Zoom Logic
-    function setupZoom(imgSrc) {
-        // Update lens background image
-        zoomLens.style.backgroundImage = `url('${imgSrc}')`;
+    function setupZoom(imageSrc) {
+        imageContainer.style.backgroundImage = `url('${imageSrc}')`;
 
-        // Calculate ratios and setup events after image loads
-        modalImage.onload = function () {
-            // We need the image dimensions
-            // Reset events to avoid duplicates
-            imageContainer.onmousemove = moveLens;
-            imageContainer.onmouseenter = () => zoomLens.style.display = 'block';
-            imageContainer.onmouseleave = () => zoomLens.style.display = 'none';
-        };
+        imageContainer.addEventListener('mousemove', moveLens);
+        imageContainer.addEventListener('mouseleave', () => {
+            imageContainer.style.backgroundPosition = 'center';
+            imageContainer.style.backgroundSize = 'contain';
+        });
+
+        function moveLens(e) {
+            const rect = imageContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const xPercent = (x / rect.width) * 100;
+            const yPercent = (y / rect.height) * 100;
+
+            imageContainer.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
+            imageContainer.style.backgroundSize = '200%'; // Zoom level
+        }
     }
-
-    function moveLens(e) {
-        e.preventDefault();
-
-        // Get dimensions
-        const containerRect = imageContainer.getBoundingClientRect();
-        const imgRect = modalImage.getBoundingClientRect();
-
-        // Calculate cursor position relative to image
-        let x = e.pageX - containerRect.left - window.pageXOffset;
-        let y = e.pageY - containerRect.top - window.pageYOffset;
-
-        // Consider the image might be smaller than container (object-fit: contain)
-        // For simplicity in this implementation, we assume the zoom works relative to the container center
-        // A more complex implementation would calculate the exact image boundaries within the container
-
-        // Lens position
-        let lensX = x - (zoomLens.offsetWidth / 2);
-        let lensY = y - (zoomLens.offsetHeight / 2);
-
-        // Prevent lens from going outside container
-        if (lensX > containerRect.width - zoomLens.offsetWidth) { lensX = containerRect.width - zoomLens.offsetWidth; }
-        if (lensX < 0) { lensX = 0; }
-        if (lensY > containerRect.height - zoomLens.offsetHeight) { lensY = containerRect.height - zoomLens.offsetHeight; }
-        if (lensY < 0) { lensY = 0; }
-
-        // Set lens position
-        zoomLens.style.left = lensX + 'px';
-        zoomLens.style.top = lensY + 'px';
-
-        // Calculate zoom ratio (2x zoom for example)
-        // We want to show the part of the image that is under the lens
-        // The background image position needs to be moved in the opposite direction
-
-        // Ratio of lens position in container (0 to 1)
-        const fx = lensX / (containerRect.width - zoomLens.offsetWidth);
-        const fy = lensY / (containerRect.height - zoomLens.offsetHeight);
-
-        // Move background image. We zoom 2.5x
-        const zoomLevel = 2.5;
-        zoomLens.style.backgroundSize = `${containerRect.width * zoomLevel}px ${containerRect.height * zoomLevel}px`;
-
-        // Calculate background position
-        const bgX = fx * (containerRect.width * zoomLevel - zoomLens.offsetWidth);
-        const bgY = fy * (containerRect.height * zoomLevel - zoomLens.offsetHeight);
-
-        zoomLens.style.backgroundPosition = `-${bgX}px -${bgY}px`;
-    }
-};
-
-// Initialize Modal
-initModal();
+}

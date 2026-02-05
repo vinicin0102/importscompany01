@@ -119,6 +119,21 @@
 
                 <div class="form-group">
                     <label>Imagem do Banner</label>
+
+                    <div style="margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                        <label
+                            style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;">Link
+                            da Imagem (URL)</label>
+                        <input type="text" id="banner-image-url"
+                            placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)"
+                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <p style="font-size: 0.75rem; color: #888; margin-top: 4px;">Recomendado para evitar que a
+                            imagem suma.</p>
+                    </div>
+
+                    <div style="margin-bottom: 5px;">
+                        <label style="font-size: 0.85rem; color: #666;">Ou envie um arquivo (Temporário):</label>
+                    </div>
                     <div class="image-upload banner-upload">
                         <input type="file" id="banner-image-file" accept="image/*">
                         <div class="image-preview" id="image-preview">
@@ -154,22 +169,41 @@
             document.getElementById('btn-cancel').addEventListener('click', closeModal);
             document.getElementById('banner-form').addEventListener('submit', saveBanner);
             document.getElementById('banner-image-file').addEventListener('change', handleImageUpload);
+
+            // Listener para input de URL
+            document.getElementById('banner-image-url').addEventListener('input', function (e) {
+                const url = e.target.value;
+                if (url) {
+                    document.getElementById('banner-image').value = url;
+                    document.getElementById('image-preview').innerHTML = `<img src="${url}" alt="Preview" style="object-fit: contain;">`;
+                }
+            });
+
             document.getElementById('sidebar-toggle').addEventListener('click', () => {
                 document.getElementById('sidebar').classList.toggle('collapsed');
             });
         });
 
         async function loadBanners() {
-            banners = await apiRequest('/api/banners');
-            renderBanners();
+            try {
+                banners = await apiRequest('/api/banners');
+                renderBanners();
+            } catch (e) { console.error(e); }
         }
 
         function renderBanners() {
             const list = document.getElementById('banners-list');
 
-            list.innerHTML = banners.map((b, i) => `
+            list.innerHTML = banners.map((b, i) => {
+                // Ajusta URL da imagem para preview
+                let imgUrl = b.image;
+                if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/')) {
+                    imgUrl = '../' + imgUrl;
+                }
+
+                return `
                 <div class="banner-card-admin ${!b.active ? 'inactive' : ''}">
-                    <div class="banner-preview" style="background-image: url('../${b.image}')"></div>
+                    <div class="banner-preview" style="background-image: url('${imgUrl}')"></div>
                     <div class="banner-info">
                         <span class="banner-order">#${i + 1}</span>
                         <h3>${b.title}</h3>
@@ -184,7 +218,7 @@
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function openNewModal() {
@@ -216,11 +250,25 @@
             document.getElementById('banner-button-link').value = banner.buttonLink || '';
             document.getElementById('banner-contain').value = banner.containMode.toString();
             document.getElementById('banner-active').value = banner.active.toString();
-            document.getElementById('banner-image').value = banner.image || '';
 
-            if (banner.image) {
+            const imgPath = banner.image || '';
+            document.getElementById('banner-image').value = imgPath;
+
+            // Popula o campo URL se for http
+            if (imgPath.startsWith('http')) {
+                document.getElementById('banner-image-url').value = imgPath;
+            } else {
+                document.getElementById('banner-image-url').value = '';
+            }
+
+            if (imgPath) {
+                let displayUrl = imgPath;
+                if (!displayUrl.startsWith('http') && !displayUrl.startsWith('/')) {
+                    displayUrl = '../' + displayUrl;
+                }
+
                 document.getElementById('image-preview').innerHTML = `
-                    <img src="../${banner.image}" alt="Preview">
+                    <img src="${displayUrl}" alt="Preview" style="object-fit: contain;">
                 `;
             }
 
@@ -285,6 +333,8 @@
                 if (!response.ok) throw new Error(data.error);
 
                 document.getElementById('banner-image').value = data.path;
+                document.getElementById('banner-image-url').value = ''; // Limpa URL se fez upload
+
                 document.getElementById('image-preview').innerHTML = `<img src="../${data.path}" alt="Preview">`;
                 showToast('Imagem enviada!');
             } catch (error) {
