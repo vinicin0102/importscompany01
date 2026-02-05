@@ -8,7 +8,8 @@ const API_URL = window.location.origin;
 function checkAuth() {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-        window.location.href = 'login.html';
+        // Redireciona para login absoluto
+        window.location.href = '/admin/login.html';
         return false;
     }
     return true;
@@ -18,7 +19,7 @@ function checkAuth() {
 function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    window.location.href = 'login.html';
+    window.location.href = '/admin/login.html';
 }
 
 // API Request helper

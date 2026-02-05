@@ -68,7 +68,7 @@
         // Check if already logged in
         const token = localStorage.getItem('adminToken');
         if (token) {
-            window.location.href = 'index.html';
+            window.location.href = '/admin/index.html';
         }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -99,7 +99,7 @@
                 localStorage.setItem('adminToken', data.token);
                 localStorage.setItem('adminUser', JSON.stringify(data.user));
 
-                window.location.href = 'index.html';
+                window.location.href = '/admin/index.html';
 
             } catch (error) {
                 errorEl.textContent = error.message;
