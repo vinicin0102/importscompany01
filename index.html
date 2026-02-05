@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Imports Company - Onde seus sonhos se realizam! Produtos importados originais com garantia e envio seguro para todo Brasil.">
+    <meta name="keywords" content="produtos importados, iphone, eletrônicos, perfumes, acessórios, importação">
+    <title>Imports Company - Produtos Importados Originais</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Particles Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Announcement Bar -->
+    <div class="announcement-bar">
+        <div class="announcement-content">
+            <span><i class="fas fa-plane"></i> FRETE GRÁTIS para compras acima de R$ 999</span>
+            <span class="divider">|</span>
+            <span><i class="fas fa-shield-halved"></i> Produtos 100% Originais</span>
+            <span class="divider">|</span>
+            <span><i class="fas fa-truck-fast"></i> Entrega Expressa</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="images/logo.jpg" alt="Imports Company Logo" class="logo-img">
+                </div>
+
+                <nav class="nav" id="nav">
+                    <ul class="nav-list">
+                        <li><a href="#home" class="nav-link active">Início</a></li>
+                        <li><a href="#products" class="nav-link">Produtos</a></li>
+                        <li><a href="#categories" class="nav-link">Categorias</a></li>
+                        <li><a href="#about" class="nav-link">Sobre</a></li>
+                        <li><a href="#contact" class="nav-link">Contato</a></li>
+                    </ul>
+                </nav>
+
+                <div class="header-actions">
+                    <div class="search-bar">
+                        <input type="text" placeholder="Buscar produtos..." class="search-input">
+                        <button class="search-btn"><i class="fas fa-search"></i></button>
+                    </div>
+                    <button class="icon-btn" id="cart-btn">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="cart-count">0</span>
+                    </button>
+                    <button class="icon-btn"><i class="fas fa-user"></i></button>
+                    <button class="menu-toggle" id="menu-toggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-slider">
+            <!-- Slide 1: Male -->
+            <div class="hero-slide active">
+                <div class="hero-bg contain-mode" style="background-image: url('images/hero_banner_full.png')"></div>
+                <div class="hero-overlay"></div>
+                <div class="container">
+                    <div class="hero-content">
+                        <span class="hero-label animate-fade-in">Nova Coleção</span>
+                        <h1 class="hero-title animate-slide-up">
+                            Estilo <br><span class="gold-text">Que Define</span>
+                        </h1>
+                        <p class="hero-description animate-slide-up-delay">
+                            Descubra a nova linha de importados masculinos.
+                            Peças exclusivas que unem conforto e autenticidade.
+                        </p>
+                        <div class="hero-buttons animate-fade-in-delay">
+                            <a href="#products" class="btn btn-primary">
+                                <span>Ver Coleção</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2: Female -->
+            <div class="hero-slide">
+                <div class="hero-bg"
+                    style="background-image: url('images/banner_female.jpg'); background-position: center top;"></div>
+                <div class="hero-overlay"></div>
+                <div class="container">
+                    <div class="hero-content">
+                        <span class="hero-label animate-fade-in">Moda Feminina</span>
+                        <h1 class="hero-title animate-slide-up">
+                            Elegância <br><span class="gold-text">& Atitude</span>
+                        </h1>
+                        <p class="hero-description animate-slide-up-delay">
+                            Tendências globais selecionadas para você.
+                            Vista-se com o melhor das grandes marcas.
+                        </p>
+                        <div class="hero-buttons animate-fade-in-delay">
+                            <a href="#products" class="btn btn-primary">
+                                <span>Ver Novidades</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Accessories -->
+            <div class="hero-slide">
+                <div class="hero-bg" style="background-image: url('images/banner_bag_black.jpg')"></div>
+                <div class="hero-overlay"></div>
+                <div class="container">
+                    <div class="hero-content">
+                        <span class="hero-label animate-fade-in">Acessórios de Luxo</span>
+                        <h1 class="hero-title animate-slide-up">
+                            Detalhes <br><span class="gold-text">Preciosos</span>
+                        </h1>
+                        <p class="hero-description animate-slide-up-delay">
+                            Bolsas e acessórios que transformam qualquer look.
+                            O toque final que você merece.
+                        </p>
+                        <div class="hero-buttons animate-fade-in-delay">
+                            <a href="#products" class="btn btn-primary">
+                                <span>Comprar Agora</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Navigation -->
+            <button class="slider-prev"><i class="fas fa-chevron-left"></i></button>
+            <button class="slider-next"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator">
+            <div class="mouse">
+                <div class="wheel"></div>
+            </div>
+            <span>Deslize para explorar</span>
+        </div>
+    </section>
+
+    <!-- Trust Badges -->
+    <section class="trust-section">
+        <div class="container">
+            <div class="trust-badges">
+                <div class="trust-badge animate-on-scroll">
+                    <div class="trust-icon">
+                        <i class="fas fa-shield-check"></i>
+                    </div>
+                    <div class="trust-text">
+                        <h4>Compra Segura</h4>
+                        <p>Proteção total</p>
+                    </div>
+                </div>
+                <div class="trust-badge animate-on-scroll">
+                    <div class="trust-icon">
+                        <i class="fas fa-award"></i>
+                    </div>
+                    <div class="trust-text">
+                        <h4>100% Original</h4>
+                        <p>Garantia autêntica</p>
+                    </div>
+                </div>
+                <div class="trust-badge animate-on-scroll">
+                    <div class="trust-icon">
+                        <i class="fas fa-truck-fast"></i>
+                    </div>
+                    <div class="trust-text">
+                        <h4>Entrega Rápida</h4>
+                        <p>Todo Brasil</p>
+                    </div>
+                </div>
+                <div class="trust-badge animate-on-scroll">
+                    <div class="trust-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div class="trust-text">
+                        <h4>Suporte 24/7</h4>
+                        <p>Sempre disponível</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories-section" id="categories">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Explore</span>
+                <h2 class="section-title">Nossas <span class="gold-text">Categorias</span></h2>
+                <p class="section-subtitle">Encontre o produto perfeito para você</p>
+            </div>
+
+            <div class="categories-grid">
+                <div class="category-card animate-on-scroll" data-category="bags">
+                    <div class="category-icon">
+                        <i class="fas fa-bag-shopping"></i>
+                    </div>
+                    <h3>Bolsas</h3>
+                    <p>Marcas Exclusivas</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div class="category-card animate-on-scroll" data-category="sneakers">
+                    <div class="category-icon">
+                        <i class="fas fa-shoe-prints"></i>
+                    </div>
+                    <h3>Tênis</h3>
+                    <p>Conforto e Estilo</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div class="category-card animate-on-scroll" data-category="womens-fashion">
+                    <div class="category-icon">
+                        <i class="fas fa-person-dress"></i>
+                    </div>
+                    <h3>Moda Feminina</h3>
+                    <p>Tendências Globais</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div class="category-card animate-on-scroll" data-category="mens-fashion">
+                    <div class="category-icon">
+                        <i class="fas fa-shirt"></i>
+                    </div>
+                    <h3>Moda Masculina</h3>
+                    <p>Elegância Moderna</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div class="category-card animate-on-scroll" data-category="wallets">
+                    <div class="category-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <h3>Carteiras</h3>
+                    <p>Couro Legítimo</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div class="category-card animate-on-scroll" data-category="watches">
+                    <div class="category-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Relógios</h3>
+                    <p>Sofisticação</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div class="category-card animate-on-scroll" data-category="bodysplash">
+                    <div class="category-icon">
+                        <i class="fas fa-spray-can-sparkles"></i>
+                    </div>
+                    <h3>Body Splash</h3>
+                    <p>Fragrâncias Leves</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div class="category-card animate-on-scroll" data-category="vitamins">
+                    <div class="category-icon">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                    <h3>Vitaminas</h3>
+                    <p>Saúde e Bem-estar</p>
+                    <span class="category-btn">Ver Coleção <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="products-section" id="products">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Destaques</span>
+                <h2 class="section-title">Produtos em <span class="gold-text">Alta</span></h2>
+                <p class="section-subtitle">Os mais desejados pelos nossos clientes</p>
+            </div>
+
+            <!-- Products Filter -->
+            <div class="products-filter">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="fashion">Moda</button>
+                <button class="filter-btn" data-filter="sneakers">Calçados</button>
+                <button class="filter-btn" data-filter="accessories">Acessórios</button>
+                <button class="filter-btn" data-filter="gold">Ouro & Luxo</button>
+            </div>
+
+            <div class="products-grid">
+                <!-- Product 1: Camisa Tommy Listrada -->
+                <div class="product-card animate-on-scroll" data-category="mens-fashion">
+                    <div class="product-badges">
+                        <span class="badge badge-hot">🔥 Mais Vendido</span>
+                    </div>
+                    <div class="product-image">
+                        <img src="images/banner_raw_2.jpg" style="object-fit: cover;" alt="Camisa Tommy Hilfiger">
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="1">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Moda Masculina</span>
+                        <h3 class="product-name">Camisa Tommy Hilfiger Listrada</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span>(42 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 499,90</span>
+                            <span class="price-current">R$ 389,90</span>
+                            <span class="price-installment">ou 12x de R$ 32,49</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 2: Malha Tommy Grey -->
+                <div class="product-card animate-on-scroll" data-category="mens-fashion">
+                    <div class="product-badges">
+                        <span class="badge badge-new">Novo</span>
+                    </div>
+                    <div class="product-image">
+                        <img src="images/banner_raw_1.jpg" style="object-fit: cover;" alt="Malha Tommy Hilfiger">
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="2">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Moda Masculina</span>
+                        <h3 class="product-name">Malha Tommy Hilfiger Cinza</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <span>(28 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 699,90</span>
+                            <span class="price-current">R$ 549,90</span>
+                            <span class="price-installment">ou 12x de R$ 45,82</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 3: T-Shirt Tommy Female -->
+                <div class="product-card animate-on-scroll" data-category="womens-fashion">
+                    <div class="product-badges">
+                        <span class="badge badge-discount">-15%</span>
+                    </div>
+                    <div class="product-image">
+                        <img src="images/banner_female.jpg" style="object-fit: cover;" alt="T-Shirt Tommy Hilfiger">
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="3">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Moda Feminina</span>
+                        <h3 class="product-name">T-Shirt Tommy Hilfiger Signature</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span>(156 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 349,90</span>
+                            <span class="price-current">R$ 289,90</span>
+                            <span class="price-installment">ou 12x de R$ 24,15</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 4: Camisa Ralph Lauren -->
+                <div class="product-card animate-on-scroll" data-category="mens-fashion">
+                    <div class="product-badges">
+                        <span class="badge badge-exclusive">Clássico</span>
+                    </div>
+                    <!-- Using placeholder since we don't have specific RL photo, re-using striped contextually or placeholder -->
+                    <div class="product-image">
+                        <div
+                            style="width:100%; height:100%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#888;">
+                            <i class="fas fa-shirt" style="font-size:3rem;"></i>
+                        </div>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="4">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Moda Masculina</span>
+                        <h3 class="product-name">Polo Ralph Lauren Iconic</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span>(89 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 599,90</span>
+                            <span class="price-current">R$ 449,90</span>
+                            <span class="price-installment">ou 12x de R$ 37,49</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 5: Bolsa MK Black -->
+                <div class="product-card animate-on-scroll" data-category="bags">
+                    <div class="product-badges">
+                        <span class="badge badge-hot">🔥 Mais Vendido</span>
+                    </div>
+                    <div class="product-image">
+                        <img src="images/banner_bag_black.jpg" style="object-fit: cover;" alt="Bolsa Michael Kors">
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="5">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Bolsas</span>
+                        <h3 class="product-name">Bolsa Michael Kors Couro Black</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span>(34 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 1.899,00</span>
+                            <span class="price-current">R$ 1.499,00</span>
+                            <span class="price-installment">ou 12x de R$ 124,91</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 6: Bolsa MK Brown -->
+                <div class="product-card animate-on-scroll" data-category="bags">
+                    <div class="product-badges">
+                        <span class="badge badge-new">Novo</span>
+                    </div>
+                    <div class="product-image">
+                        <img src="images/banner_bag_brown.jpg" style="object-fit: cover;" alt="Bolsa Michael Kors">
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="6">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Bolsas</span>
+                        <h3 class="product-name">Bolsa Michael Kors Crossbody</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <span>(12 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 1.599,00</span>
+                            <span class="price-current">R$ 1.299,00</span>
+                            <span class="price-installment">ou 12x de R$ 108,25</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 7: Camisa Floral -->
+                <div class="product-card animate-on-scroll" data-category="womens-fashion">
+                    <div class="product-badges">
+                        <span class="badge badge-exclusive">Exclusivo</span>
+                    </div>
+                    <div class="product-image">
+                        <img src="images/banner_raw_4.jpg" style="object-fit: cover;" alt="Camisa Floral">
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="7">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Moda Feminina</span>
+                        <h3 class="product-name">Camisa Floral Primavera</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span>(67 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 389,00</span>
+                            <span class="price-current">R$ 299,00</span>
+                            <span class="price-installment">ou 12x de R$ 24,91</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 8: Ralph Lauren Female Placeholder -->
+                <div class="product-card animate-on-scroll" data-category="womens-fashion">
+                    <div class="product-badges">
+                        <span class="badge badge-hot">🔥 Trending</span>
+                    </div>
+                    <div class="product-image">
+                        <div
+                            style="width:100%; height:100%; background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#aaa;">
+                            <i class="fas fa-person-dress" style="font-size:3rem;"></i>
+                        </div>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product="8">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalhes</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Moda Feminina</span>
+                        <h3 class="product-name">Camisa Social Ralph Lauren</h3>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <span>(98 avaliações)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="price-old">R$ 499,00</span>
+                            <span class="price-current">R$ 399,00</span>
+                            <span class="price-installment">ou 12x de R$ 33,25</span>
+                        </div>
+                        <button class="add-cart-btn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="products-cta">
+                <a href="#" class="btn btn-primary btn-lg">
+                    <span>Ver Todos os Produtos</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Banner Section -->
+    <section class="banner-section">
+        <div class="container">
+            <div class="banners-grid">
+                <div class="promo-banner large animate-on-scroll">
+                    <img src="images/products_banner_1770301504507.png" alt="Produtos Importados">
+                    <div class="banner-content">
+                        <h3>Produtos Importados</h3>
+                        <p>Originais com Garantia</p>
+                        <a href="#products" class="btn btn-secondary">
+                            <span>Ver Ofertas</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="promo-banner animate-on-scroll">
+                    <img src="images/shipping_banner_1770301488109.png" alt="Entrega Segura">
+                    <div class="banner-content">
+                        <h3>Entrega Segura</h3>
+                        <p>Para Todo Brasil</p>
+                    </div>
+                </div>
+                <div class="promo-banner animate-on-scroll">
+                    <img src="images/trust_badges_1770301553097.png" alt="Confiança">
+                    <div class="banner-content overlay-dark">
+                        <h3>Sua Confiança</h3>
+                        <p>É Nossa Prioridade</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-image animate-on-scroll">
+                    <img src="images/hero_banner_main_1770301537901.png" alt="Imports Company">
+                    <div class="about-badge">
+                        <span class="years">5+</span>
+                        <span class="text">Anos no<br>Mercado</span>
+                    </div>
+                </div>
+                <div class="about-text animate-on-scroll">
+                    <span class="section-label">Sobre Nós</span>
+                    <h2 class="section-title">Aqui é Onde Seus <span class="gold-text">Sonhos</span> Se Realizam!</h2>
+                    <p>
+                        A <strong>Imports Company</strong> nasceu da paixão por oferecer o melhor em produtos importados
+                        para os brasileiros. Com mais de 5 anos de experiência no mercado, somos especialistas
+                        em trazer diretamente para você produtos originais de alta qualidade.
+                    </p>
+                    <p>
+                        Nossa missão é transformar seus desejos em realidade, oferecendo produtos autênticos,
+                        preços justos e um atendimento excepcional. Cada cliente é único para nós.
+                    </p>
+
+                    <div class="about-stats">
+                        <div class="stat">
+                            <span class="stat-number" data-count="5000">0</span>
+                            <span class="stat-label">Clientes Satisfeitos</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number" data-count="10000">0</span>
+                            <span class="stat-label">Produtos Entregues</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number" data-count="100">0</span>
+                            <span class="stat-label">% Originais</span>
+                        </div>
+                    </div>
+
+                    <a href="https://wa.me/5531999716606" target="_blank" class="btn btn-primary">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Fale Conosco</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Depoimentos</span>
+                <h2 class="section-title">O Que Nossos <span class="gold-text">Clientes</span> Dizem</h2>
+            </div>
+
+            <div class="testimonials-slider">
+                <div class="testimonial-card animate-on-scroll">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "Produto chegou super rápido e exatamente como anunciado.
+                        Atendimento impecável, recomendo demais a Imports Company!"
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <span>MA</span>
+                        </div>
+                        <div class="author-info">
+                            <h4>Marina Almeida</h4>
+                            <span>São Paulo, SP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card animate-on-scroll">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "Comprei meu iPhone aqui e foi a melhor decisão!
+                        Preço justo, produto original e ainda veio lacrado. Top demais!"
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <span>RC</span>
+                        </div>
+                        <div class="author-info">
+                            <h4>Rafael Costa</h4>
+                            <span>Belo Horizonte, MG</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card animate-on-scroll">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "Terceira compra e cada vez melhor! A equipe é muito atenciosa
+                        e os produtos são realmente de primeira qualidade."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <span>FL</span>
+                        </div>
+                        <div class="author-info">
+                            <h4>Fernanda Lima</h4>
+                            <span>Rio de Janeiro, RJ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-content">
+                <div class="newsletter-text">
+                    <h2>Receba <span class="gold-text">Ofertas Exclusivas</span></h2>
+                    <p>Cadastre-se e fique por dentro das melhores promoções e lançamentos!</p>
+                </div>
+                <form class="newsletter-form" id="newsletter-form">
+                    <div class="form-group">
+                        <input type="email" placeholder="Digite seu melhor e-mail" required>
+                        <button type="submit" class="btn btn-primary">
+                            <span>Cadastrar</span>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Contato</span>
+                <h2 class="section-title">Fale <span class="gold-text">Conosco</span></h2>
+                <p class="section-subtitle">Estamos prontos para atender você!</p>
+            </div>
+
+            <div class="contact-grid">
+                <div class="contact-card animate-on-scroll">
+                    <div class="contact-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <h3>WhatsApp</h3>
+                    <p>(31) 99971-6606</p>
+                    <a href="https://wa.me/5531999716606" target="_blank" class="contact-link">
+                        Iniciar Conversa <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="contact-card animate-on-scroll">
+                    <div class="contact-icon">
+                        <i class="fab fa-instagram"></i>
+                    </div>
+                    <h3>Instagram</h3>
+                    <p>@imports.company_</p>
+                    <a href="https://instagram.com/imports.company_" target="_blank" class="contact-link">
+                        Seguir <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="contact-card animate-on-scroll">
+                    <div class="contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>E-mail</h3>
+                    <p>contato@importscompany.com</p>
+                    <a href="mailto:contato@importscompany.com" class="contact-link">
+                        Enviar E-mail <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="contact-card animate-on-scroll">
+                    <div class="contact-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Horário</h3>
+                    <p>Seg-Sex: 9h às 18h<br>Sáb: 9h às 13h</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <img src="images/logo.jpg" alt="Imports Company" class="footer-logo">
+                    <p>
+                        Onde seus sonhos se realizam! Produtos importados originais
+                        com garantia e entrega para todo Brasil.
+                    </p>
+                    <div class="social-links">
+                        <a href="https://wa.me/5531999716606" target="_blank" aria-label="WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="https://instagram.com/imports.company_" target="_blank" aria-label="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" aria-label="Facebook">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" aria-label="TikTok">
+                            <i class="fab fa-tiktok"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Navegação</h4>
+                    <ul>
+                        <li><a href="#home">Início</a></li>
+                        <li><a href="#products">Produtos</a></li>
+                        <li><a href="#categories">Categorias</a></li>
+                        <li><a href="#about">Sobre Nós</a></li>
+                        <li><a href="#contact">Contato</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Categorias</h4>
+                    <ul>
+                        <li><a href="#">Eletrônicos</a></li>
+                        <li><a href="#">Áudio</a></li>
+                        <li><a href="#">Relógios</a></li>
+                        <li><a href="#">Games</a></li>
+                        <li><a href="#">Perfumes</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Atendimento</h4>
+                    <ul>
+                        <li><a href="#">Política de Trocas</a></li>
+                        <li><a href="#">Política de Privacidade</a></li>
+                        <li><a href="#">Termos de Uso</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Rastrear Pedido</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-payment">
+                <h4>Formas de Pagamento</h4>
+                <div class="payment-icons">
+                    <i class="fab fa-cc-visa"></i>
+                    <i class="fab fa-cc-mastercard"></i>
+                    <i class="fab fa-cc-amex"></i>
+                    <i class="fab fa-pix"></i>
+                    <i class="fas fa-barcode"></i>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024 Imports Company. Todos os direitos reservados.</p>
+                <p>CNPJ: XX.XXX.XXX/0001-XX</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Float Button -->
+    <a href="https://wa.me/5531999716606" target="_blank" class="whatsapp-float" aria-label="WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+        <span class="tooltip">Fale Conosco!</span>
+    </a>
+
+    <!-- Back to Top -->
+    <button class="back-to-top" id="back-to-top" aria-label="Voltar ao topo">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fas fa-shopping-bag"></i> Seu Carrinho</h3>
+            <button class="close-cart" id="close-cart">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <div class="empty-cart">
+                <i class="fas fa-shopping-bag"></i>
+                <p>Seu carrinho está vazio</p>
+                <a href="#products" class="btn btn-primary btn-sm">Ver Produtos</a>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span class="total-value">R$ 0,00</span>
+            </div>
+            <button class="btn btn-primary btn-block">Finalizar Compra</button>
+        </div>
+    </div>
+    <div class="cart-overlay" id="cart-overlay"></div>
+
+    <!-- Product Modal -->
+    <div class="product-modal-overlay" id="product-modal-overlay">
+        <div class="product-modal">
+            <button class="close-modal" id="close-modal"><i class="fas fa-times"></i></button>
+            <div class="modal-content">
+                <div class="modal-image-container">
+                    <div class="zoom-lens" id="zoom-lens"></div>
+                    <img src="" alt="Produto" id="modal-product-image" class="modal-product-image">
+                    <div class="zoom-result" id="zoom-result"></div>
+                </div>
+                <div class="modal-details">
+                    <span class="modal-category" id="modal-product-category">Categoria</span>
+                    <h2 class="modal-title" id="modal-product-name">Nome do Produto</h2>
+                    <div class="modal-rating">
+                        <div class="stars">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span>(Avaliações verificadas)</span>
+                    </div>
+                    <div class="modal-price">
+                        <span class="modal-price-value" id="modal-product-price">R$ 0,00</span>
+                        <span class="modal-installments">Em até 12x sem juros</span>
+                    </div>
+                    <p class="modal-description">
+                        Produto original importado com garantia de fábrica.
+                        Qualidade premium e acabamento impecável.
+                        <br><br>
+                        <strong>Envio Imediato:</strong> Despachamos em até 24h.
+                    </p>
+                    <div class="modal-actions">
+                        <button class="btn btn-primary btn-block" id="modal-add-cart">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Adicionar ao Carrinho</span>
+                        </button>
+                        <button class="btn btn-success btn-block" id="modal-buy-now"
+                            style="background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); color: white; border: none;">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Comprar Agora</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
