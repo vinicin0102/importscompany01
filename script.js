@@ -889,3 +889,111 @@ window.initModal = function () {
         }
     }
 }
+
+/* ========================================
+   Notificações de Venda (Urotestom)
+   ======================================== */
+
+function initFakeSales() {
+    // Lista extensa de nomes masculinos para não repetir
+    const names = [
+        'José', 'João', 'Antônio', 'Francisco', 'Carlos', 'Paulo', 'Pedro', 'Lucas', 'Luiz', 'Marcos',
+        'Luis', 'Gabriel', 'Rafael', 'Daniel', 'Marcelo', 'Bruno', 'Eduardo', 'Felipe', 'Raimundo', 'Rodrigo',
+        'Manoel', 'Mateus', 'André', 'Fernando', 'Fábio', 'Leonardo', 'Gustavo', 'Guilherme', 'Leandro', 'Tiago',
+        'Ângelo', 'Alexandre', 'Ricardo', 'Raul', 'Sergio', 'Vitor', 'Thiago', 'Anderson', 'Joaquim', 'Roberto',
+        'Jorge', 'Samuel', 'Mario', 'Gilberto', 'Diego', 'Victor', 'Cláudio', 'Otávio', 'Caio', 'Júlio',
+        'César', 'Renato', 'Murilo', 'Rogério', 'Breno', 'Arthur', 'Henrique', 'Alberto', 'Luciano', 'Ronaldo'
+    ];
+
+    // Variações de mensagem (exatamente como pedido)
+    const actions = [
+        'adquiriu Urotestom 3 meses',
+        'acabou de comprar 5 meses Urotestom',
+        'acabou de comprar Amostra Grátis Urotestom',
+        'garantiu o kit 3 meses Urotestom',
+        'aproveitou a oferta Urotestom 5 meses',
+        'solicitou Amostra Grátis Urotestom',
+        'comprou o tratamento 3 meses Urotestom'
+    ];
+
+    // Cidades para dar mais realismo (opcional, pode ser removido se quiser só a frase exata)
+    const cities = [
+        'São Paulo, SP', 'Rio de Janeiro, RJ', 'Belo Horizonte, MG', 'Curitiba, PR', 
+        'Porto Alegre, RS', 'Salvador, BA', 'Brasília, DF', 'Fortaleza, CE', 
+        'Recife, PE', 'Goiânia, GO', 'Manaus, AM', 'Belém, PA'
+    ];
+
+    // Estado interno para evitar repetição recente
+    let availableNames = [...names];
+    
+    // Função para embaralhar array
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Embaralha nomes inicialmente
+    shuffle(availableNames);
+
+    function createNotification() {
+        // Se acabarem os nomes, recomeça
+        if (availableNames.length === 0) {
+            availableNames = shuffle([...names]);
+        }
+
+        const name = availableNames.pop(); // Pega um nome único da pilha
+        const action = actions[Math.floor(Math.random() * actions.length)];
+        const city = cities[Math.floor(Math.random() * cities.length)];
+        const timeAgo = Math.floor(Math.random() * 5) + 1; // 1 a 5 min atrás
+
+        // Remove notificação anterior se houver
+        const existing = document.querySelector('.sales-notification');
+        if (existing) existing.remove();
+
+        const notif = document.createElement('div');
+        notif.className = 'sales-notification';
+        notif.innerHTML = \
+            <div class='sales-notification-icon'>
+                <i class='fas fa-check-circle'></i>
+            </div>
+            <div class='sales-notification-content'>
+                <h4>\</h4>
+                <p>\</p>
+                <div class='sales-notification-time'>Há \ minutos • \</div>
+            </div>
+        \;
+
+        document.body.appendChild(notif);
+
+        // Animação de entrada
+        setTimeout(() => notif.classList.add('visible'), 100);
+
+        // Remove após 5 segundos
+        setTimeout(() => {
+            notif.classList.remove('visible');
+            setTimeout(() => notif.remove(), 600);
+        }, 5000);
+    }
+
+    // Loop infinito de notificações
+    function startLoop() {
+        // Primeira notificação rápida (3s)
+        setTimeout(() => {
+            createNotification();
+            
+            // Depois, a cada 10-20 segundos
+            setInterval(() => {
+                createNotification();
+            }, Math.random() * 10000 + 10000); // Entre 10s e 20s
+        }, 3000);
+    }
+
+    startLoop();
+}
+
+// Inicia automaticamente
+initFakeSales();
+
