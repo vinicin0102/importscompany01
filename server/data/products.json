@@ -102,5 +102,70 @@
         "rating": 4.5,
         "reviews": 98,
         "active": true
+    },
+    {
+        "id": 9,
+        "name": "Camiseta Armani Exchange A|X",
+        "category": "mens-fashion",
+        "price": 349.90,
+        "oldPrice": 449.90,
+        "image": "",
+        "stock": 20,
+        "badge": "new",
+        "rating": 5,
+        "reviews": 0,
+        "active": true
+    },
+    {
+        "id": 10,
+        "name": "Camiseta FIFA World Cup",
+        "category": "mens-fashion",
+        "price": 299.90,
+        "oldPrice": 399.90,
+        "image": "",
+        "stock": 15,
+        "badge": "hot",
+        "rating": 5,
+        "reviews": 0,
+        "active": true
+    },
+    {
+        "id": 11,
+        "name": "Camiseta Nike Air",
+        "category": "mens-fashion",
+        "price": 279.90,
+        "oldPrice": 349.90,
+        "image": "",
+        "stock": 25,
+        "badge": "new",
+        "rating": 5,
+        "reviews": 0,
+        "active": true
+    },
+    {
+        "id": 12,
+        "name": "Camiseta Tommy Hilfiger Navy",
+        "category": "mens-fashion",
+        "price": 329.90,
+        "oldPrice": 429.90,
+        "image": "",
+        "stock": 18,
+        "badge": "exclusive",
+        "rating": 5,
+        "reviews": 0,
+        "active": true
+    },
+    {
+        "id": 13,
+        "name": "Camiseta Tommy Hilfiger Blue",
+        "category": "mens-fashion",
+        "price": 329.90,
+        "oldPrice": 429.90,
+        "image": "",
+        "stock": 18,
+        "badge": "exclusive",
+        "rating": 5,
+        "reviews": 0,
+        "active": true
     }
 ]
