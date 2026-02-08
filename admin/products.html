@@ -257,6 +257,10 @@
 
             // Image upload
             document.getElementById('product-image-file').addEventListener('change', handleImageUpload);
+            // Setup click on preview to open file dialog
+            document.getElementById('image-preview').addEventListener('click', () => {
+                document.getElementById('product-image-file').click();
+            });
 
             // Sidebar toggle
             document.getElementById('sidebar-toggle').addEventListener('click', () => {
@@ -455,7 +459,16 @@
 
                 const data = await response.json();
 
-                if (!response.ok) throw new Error(data.error);
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Token expirado ou inválido
+                        localStorage.removeItem('adminToken');
+                        localStorage.removeItem('adminUser');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(data.error);
+                }
 
                 document.getElementById('product-image').value = data.path;
                 document.getElementById('image-preview').innerHTML = `

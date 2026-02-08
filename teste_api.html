@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Teste de API e Imagens</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Diagnóstico do Sistema</h1>
+
+    <div id="api-status" class="status">Testando conexão com API...</div>
+    <div id="image-status" class="status">Testando imagem placeholder...</div>
+
+    <h2>Produtos Carregados:</h2>
+    <div id="products-grid" class="grid">Carregando...</div>
+
+    <script>
+        async function runDiagnostics() {
+            const apiStatus = document.getElementById('api-status');
+            const imgStatus = document.getElementById('image-status');
+            const grid = document.getElementById('products-grid');
+
+            // 1. Testar Imagem Placeholder
+            const imgCheck = new Image();
+            imgCheck.onload = () => {
+                imgStatus.textContent = "✅ Imagem placeholder.png encontrada e carregada com sucesso!";
+                imgStatus.className = "status success";
+            };
+            imgCheck.onerror = () => {
+                imgStatus.textContent = "❌ ERRO: Imagem placeholder.png NÃO encontrada em /images/placeholder.png";
+                imgStatus.className = "status error";
+            };
+            imgCheck.src = '/images/placeholder.png';
+
+            // 2. Testar API de Produtos
+            try {
+                const response = await fetch('/api/products');
+                if (!response.ok) throw new Error(`Status ${response.status}`);
+
+                const products = await response.json();
+                apiStatus.textContent = `✅ API conectada! ${products.length} produtos encontrados.`;
+                apiStatus.className = "status success";
+
+                if (products.length === 0) {
+                    grid.innerHTML = "<p>Nenhum produto cadastrado.</p>";
+                    return;
+                }
+
+                grid.innerHTML = products.map(p => `
+                    <div class="card">
+                        <p><strong>ID:</strong> ${p.id}</p>
+                        <p><strong>Nome:</strong> ${p.name}</p>
+                        <p><strong>Imagem:</strong> ${p.image || 'Sem imagem'}</p>
+                        <img src="${p.image || '/images/placeholder.png'}" 
+                             onerror="this.onerror=null;this.src='/images/placeholder.png'; this.style.border='2px solid red'">
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                apiStatus.textContent = `❌ ERRO NA API: ${error.message}. Verifique se o servidor está rodando na porta correta (3001).`;
+                apiStatus.className = "status error";
+                grid.innerHTML = "<p>Falha ao carregar produtos.</p>";
+            }
+        }
+
+        runDiagnostics();
+    </script>
+</body>
+
+</html>

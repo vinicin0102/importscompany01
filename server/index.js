@@ -20,6 +20,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..'))); // Serve the main site
+app.use('/images', express.static(path.join(__dirname, '..', 'images'))); // Serve images explicitly
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin'))); // Serve admin panel
 
 // File upload config - Vercel compatible (using /tmp for temporary storage if in lambda)
