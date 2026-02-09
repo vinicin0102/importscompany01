@@ -346,8 +346,12 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
         res.json({ filename: req.file.filename, path: `images/${req.file.filename}` });
 
     } catch (error) {
-        console.error('Upload Error:', error);
-        res.status(500).json({ error: 'Falha ao salvar imagem no servidor' });
+        console.error('Upload Error Completo:', error);
+        res.status(500).json({
+            error: 'Falha ao salvar imagem no servidor',
+            details: error.message,
+            stack: process.env.VERCEL ? null : error.stack
+        });
     }
 });
 
