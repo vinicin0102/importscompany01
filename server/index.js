@@ -2,10 +2,10 @@
  * IMPORTS COMPANY - Admin Server (Hybrid: Supabase + Local JSON Fallback)
  * Garante que o painel funcione mesmo se o banco de dados falhar.
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
@@ -349,6 +349,23 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
         console.error('Upload Error:', error);
         res.status(500).json({ error: 'Falha ao salvar imagem no servidor' });
     }
+});
+
+// =============================================
+// DEBUG ROUTE (Diagnóstico)
+// =============================================
+
+app.get('/api/debug', (req, res) => {
+    res.json({
+        status: 'OK',
+        supabaseConfigured: !!supabase,
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        isVercel: !!process.env.VERCEL,
+        nodeVersion: process.version,
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Export & Start
