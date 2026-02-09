@@ -279,9 +279,54 @@ app.put('/api/settings', authMiddleware, async (req, res) => {
 // UPLOAD ROUTE
 // =============================================
 
-app.post('/api/upload', authMiddleware, upload.single('image'), (req, res) => {
+// =============================================
+// UPLOAD ROUTE (Supabase Storage Integrado)
+// =============================================
+
+app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Nenhuma imagem enviada' });
-    res.json({ filename: req.file.filename, path: `images/${req.file.filename}` });
+
+    try {
+        // Se Supabase estiver ativo, fazer upload para o Bucket 'images'
+        if (supabase) {
+            const fileExt = req.file.originalname.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = req.file.path;
+            const fileBuffer = fs.readFileSync(filePath);
+
+            console.log(`📤 Enviando para Supabase Storage: ${fileName}`);
+
+            const { data, error } = await supabase.storage
+                .from('images')
+                .upload(fileName, fileBuffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false
+                });
+
+            // Limpar arquivo temporário
+            try { fs.unlinkSync(filePath); } catch (e) { }
+
+            if (error) {
+                console.error('❌ Erro Supabase Storage:', error);
+                throw error;
+            }
+
+            // Obter URL Pública
+            const { data: { publicUrl } } = supabase.storage
+                .from('images')
+                .getPublicUrl(fileName);
+
+            console.log(`✅ Upload sucesso: ${publicUrl}`);
+            return res.json({ filename: fileName, path: publicUrl });
+        }
+
+        // Fallback Local (apenas desenvolvimento)
+        res.json({ filename: req.file.filename, path: `images/${req.file.filename}` });
+
+    } catch (error) {
+        console.error('Upload Error:', error);
+        res.status(500).json({ error: 'Falha ao salvar imagem no servidor' });
+    }
 });
 
 // Export & Start

@@ -10,6 +10,20 @@ DROP TABLE IF EXISTS banners CASCADE;
 DROP TABLE IF EXISTS settings CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
+-- STORAGE (Upload de Imagens)
+-- Tenta criar o bucket 'images' (se a extensão storage estiver ativa)
+BEGIN;
+  INSERT INTO storage.buckets (id, name, public) 
+  VALUES ('images', 'images', true)
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Remove policies antigas para recriar
+  DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+  
+  -- Cria policy para leitura pública
+  CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'images' );
+COMMIT;
+
 -- 2. CRIAÇÃO DAS TABELAS (Schema correto)
 
 -- Categorias (ID como TEXTO)
