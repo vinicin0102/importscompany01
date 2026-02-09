@@ -57,15 +57,9 @@ app.use('/images', express.static(path.join(__dirname, '..', 'images')));
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
 
 // File Storage (Local/Temp)
-const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '..', 'images');
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
-        cb(null, uniqueName);
-    }
-});
-const upload = multer({ storage });
+// File Storage (Memory Strategy for Vercel/Serverless)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
 
 // =============================================
 // DATA HANDLERS (HYBRID STRATEGY)
@@ -309,31 +303,25 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
     if (!req.file) return res.status(400).json({ error: 'Nenhuma imagem enviada' });
 
     try {
-        // Se Supabase estiver ativo, fazer upload para o Bucket 'images'
-        if (supabase) {
-            const fileExt = req.file.originalname.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-            const filePath = req.file.path;
-            const fileBuffer = fs.readFileSync(filePath);
+        const fileExt = req.file.originalname.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-            console.log(`📤 Enviando para Supabase Storage: ${fileName}`);
+        // Se Supabase estiver ativo, usar buffer para upload
+        if (supabase) {
+            console.log(`📤 Enviando para Supabase Storage: ${fileName} (${req.file.size} bytes)`);
 
             const { data, error } = await supabase.storage
                 .from('images')
-                .upload(fileName, fileBuffer, {
+                .upload(fileName, req.file.buffer, {
                     contentType: req.file.mimetype,
                     upsert: false
                 });
-
-            // Limpar arquivo temporário
-            try { fs.unlinkSync(filePath); } catch (e) { }
 
             if (error) {
                 console.error('❌ Erro Supabase Storage:', error);
                 throw error;
             }
 
-            // Obter URL Pública
             const { data: { publicUrl } } = supabase.storage
                 .from('images')
                 .getPublicUrl(fileName);
@@ -343,7 +331,12 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
         }
 
         // Fallback Local (apenas desenvolvimento)
-        res.json({ filename: req.file.filename, path: `images/${req.file.filename}` });
+        // Como estamos usando memoryStorage, precisamos escrever o buffer no disco manualmente
+        const localPath = path.join(__dirname, '..', 'images', fileName);
+        fs.writeFileSync(localPath, req.file.buffer);
+
+        console.log(`📂 Salvo localmente: images/${fileName}`);
+        res.json({ filename: fileName, path: `images/${fileName}` });
 
     } catch (error) {
         console.error('Upload Error Completo:', error);
