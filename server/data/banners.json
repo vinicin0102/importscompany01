@@ -1,38 +1,38 @@
 [
-    {
-        "id": 1,
-        "title": "Estilo Que Define",
-        "subtitle": "Nova Coleção",
-        "description": "Descubra a nova linha de importados masculinos. Peças exclusivas que unem conforto e autenticidade.",
-        "image": "images/hero_banner_full.png",
-        "buttonText": "Ver Coleção",
-        "buttonLink": "#products",
-        "containMode": true,
-        "active": true,
-        "order": 1
-    },
-    {
-        "id": 2,
-        "title": "Elegância & Atitude",
-        "subtitle": "Moda Feminina",
-        "description": "Tendências globais selecionadas para você. Vista-se com o melhor das grandes marcas.",
-        "image": "images/banner_female.jpg",
-        "buttonText": "Ver Novidades",
-        "buttonLink": "#products",
-        "containMode": false,
-        "active": true,
-        "order": 2
-    },
-    {
-        "id": 3,
-        "title": "Detalhes Preciosos",
-        "subtitle": "Acessórios de Luxo",
-        "description": "Bolsas e acessórios que transformam qualquer look. O toque final que você merece.",
-        "image": "images/banner_bag_black.jpg",
-        "buttonText": "Comprar Agora",
-        "buttonLink": "#products",
-        "containMode": false,
-        "active": true,
-        "order": 3
-    }
+  {
+    "id": 1,
+    "title": "Estilo Que Define",
+    "subtitle": "Nova Coleção",
+    "description": "Descubra a nova linha de importados masculinos. Peças exclusivas que unem conforto e autenticidade.",
+    "image": "images/hero_banner_full.png",
+    "buttonText": "Ver Coleção",
+    "buttonLink": "#products",
+    "containMode": true,
+    "active": true,
+    "order": 1
+  },
+  {
+    "id": 2,
+    "title": "Elegância & Atitude",
+    "subtitle": "Moda Feminina",
+    "description": "Tendências globais selecionadas para você. Vista-se com o melhor das grandes marcas.",
+    "image": "images/banner_female.jpg",
+    "buttonText": "Ver Novidades",
+    "buttonLink": "#products",
+    "containMode": false,
+    "active": true,
+    "order": 2
+  },
+  {
+    "id": 3,
+    "title": "Detalhes Preciosos",
+    "subtitle": "Acessórios de Luxo",
+    "description": "Bolsas e acessórios que transformam qualquer look. O toque final que você merece.",
+    "image": "images/1770595783647_WhatsApp_Image_2026-02-05_at_15.30.35_(1).jpeg",
+    "buttonText": "Comprar Agora",
+    "buttonLink": "#products",
+    "containMode": false,
+    "active": true,
+    "order": 3
+  }
 ]

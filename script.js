@@ -1,4 +1,4 @@
-/* ========================================
+﻿/* ========================================
    IMPORTS COMPANY - JavaScript
    ======================================== */
 
@@ -38,8 +38,9 @@ async function initHeroSlider() {
 
             if (activeBanners.length > 0) {
                 activeBanners.sort((a, b) => a.order - b.order);
-                const oldSlides = sliderContainer.querySelectorAll('.hero-slide');
-                oldSlides.forEach(s => s.remove());
+                // NÃO remover slides existentes - manter fallback do HTML
+                // const oldSlides = sliderContainer.querySelectorAll('.hero-slide');
+                // oldSlides.forEach(s => s.remove());
 
                 activeBanners.forEach((banner, index) => {
                     const slide = document.createElement('div');
@@ -63,10 +64,10 @@ async function initHeroSlider() {
             }
         }
     } catch (e) {
-        console.warn('Usando banners padrão (API offline ou erro):', e);
+        console.warn('Usando banners padrÃ£o (API offline ou erro):', e);
     }
 
-    // Lógica do Slider
+    // LÃ³gica do Slider
     const slides = document.querySelectorAll('.hero-slide');
     const nextBtn = document.querySelector('.slider-next');
     const prevBtn = document.querySelector('.slider-prev');
@@ -279,7 +280,7 @@ function initProductFilter() {
             const productId = button.dataset.product;
             // You can implement a modal or redirect to product page
             console.log('Quick view product:', productId);
-            alert('Visualização rápida do produto ' + productId);
+            alert('VisualizaÃ§Ã£o rÃ¡pida do produto ' + productId);
         });
     });
 }
@@ -374,7 +375,7 @@ function initCart() {
                 cartItems.innerHTML = `
                     <div class="empty-cart">
                         <i class="fas fa-shopping-bag"></i>
-                        <p>Seu carrinho está vazio</p>
+                        <p>Seu carrinho estÃ¡ vazio</p>
                         <a href="#products" class="btn btn-primary btn-sm" onclick="closeCartSidebar()">Ver Produtos</a>
                     </div>
                 `;
@@ -408,26 +409,26 @@ function initCart() {
         if (checkoutBtn) {
             checkoutBtn.onclick = function () {
                 if (cart.length === 0) {
-                    showNotification('Seu carrinho está vazio!', 'error');
+                    showNotification('Seu carrinho estÃ¡ vazio!', 'error');
                     return;
                 }
 
-                let message = "Olá! Gostaria de finalizar meu pedido na Imports Company:\n\n";
+                let message = "OlÃ¡! Gostaria de finalizar meu pedido na Imports Company:\n\n";
                 let total = 0;
 
                 cart.forEach(item => {
                     const priceNumber = parseFloat(item.price.replace('R$ ', '').replace('.', '').replace(',', '.'));
                     total += priceNumber;
-                    message += `✅ ${item.name}\n   Qtd: 1 | Valor: ${item.price}\n`;
+                    message += `âœ… ${item.name}\n   Qtd: 1 | Valor: ${item.price}\n`;
                 });
 
                 const totalFormatted = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                message += `\n💰 *Valor Total: R$ ${totalFormatted}*`;
+                message += `\nðŸ’° *Valor Total: R$ ${totalFormatted}*`;
                 message += `\n\nQual a forma de pagamento?`;
 
                 // Encode message for URL
                 const encodedMessage = encodeURIComponent(message);
-                const phone = "5531999716606"; // Seu número
+                const phone = "5531999716606"; // Seu nÃºmero
 
                 showNotification('Gerando pedido no WhatsApp...');
                 setTimeout(() => {
@@ -560,7 +561,7 @@ function initNewsletterForm() {
         form.querySelector('button').innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Enviando...</span>';
 
         setTimeout(() => {
-            showNotification('E-mail cadastrado com sucesso! 🎉');
+            showNotification('E-mail cadastrado com sucesso! ðŸŽ‰');
             form.reset();
             form.querySelector('button').innerHTML = '<span>Cadastrar</span> <i class="fas fa-paper-plane"></i>';
         }, 1500);
@@ -751,10 +752,10 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-console.log('🛩️ Imports Company - Loja Online carregada com sucesso!');
+console.log('ðŸ›©ï¸ Imports Company - Loja Online carregada com sucesso!');
 
 /* ========================================
-   CONFIGURAÇÃO YAMPI (LINKS DE CHECKOUT)
+   CONFIGURAÃ‡ÃƒO YAMPI (LINKS DE CHECKOUT)
    ========================================
    Cole aqui os links de checkout dos seus produtos na Yampi.
    A chave (lado esquerdo) deve conter parte do nome do produto.
@@ -849,12 +850,12 @@ window.initModal = function () {
             cart.push(product);
             localStorage.setItem('importsCart', JSON.stringify(cart));
 
-            // Se as funções de UI do carrinho forem globais:
+            // Se as funÃ§Ãµes de UI do carrinho forem globais:
             // updateCartUI(); 
-            // Mas como estão dentro de initCart, não temos acesso direto sem expor.
-            // Para simplificar, vou recarregar a página ou disparar evento.
+            // Mas como estÃ£o dentro de initCart, nÃ£o temos acesso direto sem expor.
+            // Para simplificar, vou recarregar a pÃ¡gina ou disparar evento.
             // O ideal seria que initCart expusesse updateCartUI.
-            // Vou apenas fechar o modal e mostrar notificação.
+            // Vou apenas fechar o modal e mostrar notificaÃ§Ã£o.
 
             closeModal();
             showNotification('Produto adicionado ao carrinho!');
@@ -891,42 +892,42 @@ window.initModal = function () {
 }
 
 /* ========================================
-   Notifica��es de Venda (Urotestom)
+   Notificações de Venda (Urotestom)
    ======================================== */
 
 function initFakeSales() {
-    // Lista extensa de nomes masculinos para n�o repetir
+    // Lista extensa de nomes masculinos para não repetir
     const names = [
-        'Jos�', 'Jo�o', 'Ant�nio', 'Francisco', 'Carlos', 'Paulo', 'Pedro', 'Lucas', 'Luiz', 'Marcos',
+        'José', 'João', 'Antônio', 'Francisco', 'Carlos', 'Paulo', 'Pedro', 'Lucas', 'Luiz', 'Marcos',
         'Luis', 'Gabriel', 'Rafael', 'Daniel', 'Marcelo', 'Bruno', 'Eduardo', 'Felipe', 'Raimundo', 'Rodrigo',
-        'Manoel', 'Mateus', 'Andr�', 'Fernando', 'F�bio', 'Leonardo', 'Gustavo', 'Guilherme', 'Leandro', 'Tiago',
-        '�ngelo', 'Alexandre', 'Ricardo', 'Raul', 'Sergio', 'Vitor', 'Thiago', 'Anderson', 'Joaquim', 'Roberto',
-        'Jorge', 'Samuel', 'Mario', 'Gilberto', 'Diego', 'Victor', 'Cl�udio', 'Ot�vio', 'Caio', 'J�lio',
-        'C�sar', 'Renato', 'Murilo', 'Rog�rio', 'Breno', 'Arthur', 'Henrique', 'Alberto', 'Luciano', 'Ronaldo'
+        'Manoel', 'Mateus', 'André', 'Fernando', 'Fábio', 'Leonardo', 'Gustavo', 'Guilherme', 'Leandro', 'Tiago',
+        'Ângelo', 'Alexandre', 'Ricardo', 'Raul', 'Sergio', 'Vitor', 'Thiago', 'Anderson', 'Joaquim', 'Roberto',
+        'Jorge', 'Samuel', 'Mario', 'Gilberto', 'Diego', 'Victor', 'Cláudio', 'Otávio', 'Caio', 'Júlio',
+        'César', 'Renato', 'Murilo', 'Rogério', 'Breno', 'Arthur', 'Henrique', 'Alberto', 'Luciano', 'Ronaldo'
     ];
 
-    // Varia��es de mensagem (exatamente como pedido)
+    // Variações de mensagem (exatamente como pedido)
     const actions = [
         'adquiriu Urotestom 3 meses',
         'acabou de comprar 5 meses Urotestom',
-        'acabou de comprar Amostra Gr�tis Urotestom',
+        'acabou de comprar Amostra Grátis Urotestom',
         'garantiu o kit 3 meses Urotestom',
         'aproveitou a oferta Urotestom 5 meses',
-        'solicitou Amostra Gr�tis Urotestom',
+        'solicitou Amostra Grátis Urotestom',
         'comprou o tratamento 3 meses Urotestom'
     ];
 
-    // Cidades para dar mais realismo (opcional, pode ser removido se quiser s� a frase exata)
+    // Cidades para dar mais realismo (opcional, pode ser removido se quiser só a frase exata)
     const cities = [
-        'S�o Paulo, SP', 'Rio de Janeiro, RJ', 'Belo Horizonte, MG', 'Curitiba, PR', 
-        'Porto Alegre, RS', 'Salvador, BA', 'Bras�lia, DF', 'Fortaleza, CE', 
-        'Recife, PE', 'Goi�nia, GO', 'Manaus, AM', 'Bel�m, PA'
+        'São Paulo, SP', 'Rio de Janeiro, RJ', 'Belo Horizonte, MG', 'Curitiba, PR', 
+        'Porto Alegre, RS', 'Salvador, BA', 'Brasília, DF', 'Fortaleza, CE', 
+        'Recife, PE', 'Goiânia, GO', 'Manaus, AM', 'Belém, PA'
     ];
 
-    // Estado interno para evitar repeti��o recente
+    // Estado interno para evitar repetição recente
     let availableNames = [...names];
     
-    // Fun��o para embaralhar array
+    // Função para embaralhar array
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -939,17 +940,17 @@ function initFakeSales() {
     shuffle(availableNames);
 
     function createNotification() {
-        // Se acabarem os nomes, recome�a
+        // Se acabarem os nomes, recomeça
         if (availableNames.length === 0) {
             availableNames = shuffle([...names]);
         }
 
-        const name = availableNames.pop(); // Pega um nome �nico da pilha
+        const name = availableNames.pop(); // Pega um nome único da pilha
         const action = actions[Math.floor(Math.random() * actions.length)];
         const city = cities[Math.floor(Math.random() * cities.length)];
-        const timeAgo = Math.floor(Math.random() * 5) + 1; // 1 a 5 min atr�s
+        const timeAgo = Math.floor(Math.random() * 5) + 1; // 1 a 5 min atrás
 
-        // Remove notifica��o anterior se houver
+        // Remove notificação anterior se houver
         const existing = document.querySelector('.sales-notification');
         if (existing) existing.remove();
 
@@ -962,25 +963,25 @@ function initFakeSales() {
             <div class='sales-notification-content'>
                 <h4>\</h4>
                 <p>\</p>
-                <div class='sales-notification-time'>H� \ minutos � \</div>
+                <div class='sales-notification-time'>Há \ minutos • \</div>
             </div>
         \;
 
         document.body.appendChild(notif);
 
-        // Anima��o de entrada
+        // Animação de entrada
         setTimeout(() => notif.classList.add('visible'), 100);
 
-        // Remove ap�s 5 segundos
+        // Remove após 5 segundos
         setTimeout(() => {
             notif.classList.remove('visible');
             setTimeout(() => notif.remove(), 600);
         }, 5000);
     }
 
-    // Loop infinito de notifica��es
+    // Loop infinito de notificações
     function startLoop() {
-        // Primeira notifica��o r�pida (3s)
+        // Primeira notificação rápida (3s)
         setTimeout(() => {
             createNotification();
             
@@ -996,4 +997,5 @@ function initFakeSales() {
 
 // Inicia automaticamente
 initFakeSales();
+
 
