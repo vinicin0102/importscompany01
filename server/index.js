@@ -355,15 +355,36 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
 // DEBUG ROUTE (Diagnóstico)
 // =============================================
 
-app.get('/api/debug', (req, res) => {
+app.get('/api/debug', async (req, res) => {
+    let dbStatus = 'Unknown';
+    let dbError = null;
+    let productsCount = 0;
+
+    if (supabase) {
+        try {
+            const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
+            if (error) {
+                dbStatus = 'Error';
+                dbError = error.message;
+            } else {
+                dbStatus = 'Connected';
+                productsCount = count;
+            }
+        } catch (e) {
+            dbStatus = 'Exception';
+            dbError = e.message;
+        }
+    }
+
     res.json({
         status: 'OK',
         supabaseConfigured: !!supabase,
+        dbStatus,
+        dbError, // Aqui vai aparecer "relation products does not exist" se faltar a tabela
+        productsCount,
         hasSupabaseUrl: !!process.env.SUPABASE_URL,
         hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        hasJwtSecret: !!process.env.JWT_SECRET,
         isVercel: !!process.env.VERCEL,
-        nodeVersion: process.version,
         timestamp: new Date().toISOString()
     });
 });
