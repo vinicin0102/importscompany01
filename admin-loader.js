@@ -68,12 +68,18 @@ function renderProducts(products) {
             badgeHtml = `<span class="badge ${badgeClass}">${badgeText}</span>`;
         }
 
+
+        // Determinar caminho da imagem (URL externa ou local)
+        const imageSrc = product.image && product.image.startsWith('http')
+            ? product.image
+            : (product.image || 'images/placeholder.png');
+
         const card = document.createElement('article');
         card.className = 'product-card animate-in';
         card.innerHTML = `
             ${badgeHtml}
             <div class="product-image-wrapper">
-                <img src="${product.image}" alt="${product.name}" class="product-img" onerror="this.onerror=null;this.src='images/placeholder.png';">
+                <img src="${imageSrc}" alt="${product.name}" class="product-img" onerror="this.onerror=null;this.src='images/placeholder.png';">
             </div>
             <div class="product-details">
                 <span class="product-category">${product.category || 'Geral'}</span>
