@@ -580,3 +580,195 @@ h6 {
         font-size: 1.1rem;
     }
 }
+/* ========================================
+   Modal de Produto & Zoom Espiao
+   ======================================== */
+
+.product-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1000px;
+    position: relative;
+    animation: slideIn 0.3s;
+}
+
+.modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    color: black;
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+/* Zoom da Imagem */
+.modal-image-container {
+    position: relative;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+.modal-main-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+.zoom-lens {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    width: 100px;
+    height: 100px;
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    display: none;
+}
+
+.zoom-result {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    width: 300px;
+    height: 300px;
+    top: 0;
+    left: 105%;
+    background-repeat: no-repeat;
+    display: none;
+    z-index: 100;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Seletores de Opçao */
+.option-group {
+    margin-bottom: 20px;
+}
+
+.option-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--primary-navy);
+}
+
+.color-options, .size-options {
+    display: flex;
+    gap: 10px;
+}
+
+.color-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.2s;
+}
+
+.color-btn.selected {
+    border-color: var(--gold);
+    transform: scale(1.1);
+}
+
+.size-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.size-btn:hover, .size-btn.selected {
+    background: var(--primary-navy);
+    color: white;
+    border-color: var(--primary-navy);
+}
+
+/* Botões de Açao */
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-buy-now {
+    background: linear-gradient(135deg, #1a2744 0%, #2c416e 100%);
+    color: white;
+    border: none;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 100%;
+    text-align: center;
+}
+
+.btn-buy-now:hover {
+    background: linear-gradient(135deg, #2c416e 0%, #1a2744 100%);
+}
+
+.btn-whatsapp {
+    background: #25D366;
+    color: white;
+    border: none;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 100%;
+    text-align: center;
+}
+
+.btn-whatsapp:hover {
+    background: #128C7E;
+}
+
+/* Responsividade Modal */
+@media (max-width: 768px) {
+    .modal-grid {
+        grid-template-columns: 1fr;
+    }
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .zoom-result {
+        display: none !important; /* Em mobile, nâo usa zoom lateral */
+    }
+}
+
+@keyframes fadeIn {from {opacity: 0} to {opacity: 1}}
+@keyframes slideIn {from {top: -50px; opacity: 0} to {top: 0; opacity: 1}}

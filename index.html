@@ -241,8 +241,208 @@
         </div>
     </footer>
 
+    <!-- Product Preview Modal -->
+    <div id="productModal" class="product-modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-grid">
+
+                <!-- Image Side with Zoom -->
+                <div class="modal-image-container" id="modalImageContainer">
+                    <img id="modalImage" src="" alt="Produto" class="modal-main-img">
+                    <div id="zoomLens" class="zoom-lens"></div>
+                    <div id="zoomResult" class="zoom-result"></div>
+                    <div class="zoom-hint"><i class="fas fa-search-plus"></i> Passe o mouse para zoom</div>
+                </div>
+
+                <!-- Info Side -->
+                <div class="modal-info">
+                    <span id="modalCategory" class="product-category">Categoria</span>
+                    <h2 id="modalTitle" style="margin: 10px 0; font-size: 2rem; color: #1a2744;">Nome do Produto</h2>
+
+                    <div style="margin: 20px 0; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                        <span id="modalOldPrice" class="price-old" style="margin-right: 10px;">R$ 0,00</span>
+                        <span id="modalPrice" class="price-current" style="display: inline-block;">R$ 0,00</span>
+                        <div id="modalInstallment" class="installment" style="margin-top: 5px;">ou 12x de R$ 0,00</div>
+                    </div>
+
+                    <div style="margin: 20px 0;">
+                        <label
+                            style="font-weight: bold; display: block; margin-bottom: 10px; color: #1a2744;">Tamanho:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="size-btn" onclick="selectSize(this)">P</button>
+                            <button class="size-btn selected" onclick="selectSize(this)">M</button>
+                            <button class="size-btn" onclick="selectSize(this)">G</button>
+                            <button class="size-btn" onclick="selectSize(this)">GG</button>
+                        </div>
+                    </div>
+
+                    <div style="margin: 20px 0;">
+                        <label
+                            style="font-weight: bold; display: block; margin-bottom: 10px; color: #1a2744;">Cor:</label>
+                        <div class="color-options">
+                            <button class="color-btn selected" style="background-color: #000;"
+                                onclick="selectColor(this)"></button>
+                            <button class="color-btn" style="background-color: #fff; border: 1px solid #ddd;"
+                                onclick="selectColor(this)"></button>
+                            <button class="color-btn" style="background-color: #1a2744;"
+                                onclick="selectColor(this)"></button>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-buy-now" onclick="checkout()">
+                            <i class="fas fa-lock"></i> COMPRAR AGORA
+                        </button>
+
+                        <button class="btn-whatsapp" onclick="buyWhatsapp()">
+                            <i class="fab fa-whatsapp"></i> COMPRAR PELO WHATSAPP
+                        </button>
+                    </div>
+
+                    <div
+                        style="margin-top: 20px; font-size: 0.9rem; color: #555; display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                        <i class="fas fa-truck" style="color: #1a2744;"></i>
+                        <span>Frete Grátis & Entrega Segura para todo Brasil</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
-    <script src="script.js?v=2026"></script>
+    <script src="script.js?v=2026_final"></script>
+
+    <script>
+        // ==========================================
+        // Lógica do Modal de Produto (Zoom & Compra)
+        // ==========================================
+
+        const modal = document.getElementById("productModal");
+        const closeBtn = document.querySelector(".modal-close");
+        const modalImg = document.getElementById("modalImage");
+        const lens = document.getElementById("zoomLens");
+        const result = document.getElementById("zoomResult");
+        const container = document.getElementById("modalImageContainer");
+
+        // Fechar Modal
+        closeBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
+
+        // Abrir Modal com dados do Produto
+        function openProductModal(data) {
+            document.getElementById("modalImage").src = data.img;
+            document.getElementById("modalTitle").innerText = data.title;
+            document.getElementById("modalPrice").innerText = data.price;
+            document.getElementById("modalOldPrice").innerText = data.oldPrice;
+            document.getElementById("modalInstallment").innerText = data.installment;
+            document.getElementById("modalCategory").innerText = data.category;
+
+            // Configurar Zoom
+            result.style.backgroundImage = `url('${data.img}')`;
+
+            modal.style.display = "block";
+        }
+
+        // Seleção de Tamanho e Cor
+        window.selectSize = (btn) => {
+            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        };
+
+        window.selectColor = (btn) => {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        // Ações de Compra
+        window.checkout = () => {
+            const product = document.getElementById("modalTitle").innerText;
+            alert(`Redirecionando para o Checkout Seguro: ${product}`);
+            // window.location.href = "/checkout"; // Link real aqui
+        };
+
+        window.buyWhatsapp = () => {
+            const product = document.getElementById("modalTitle").innerText;
+            const price = document.getElementById("modalPrice").innerText;
+            const size = document.querySelector('.size-btn.selected').innerText;
+
+            const text = `Olá! Tenho interesse no *${product}* (Tam: ${size}) por *${price}*.`;
+            const url = `https://wa.me/5511999999999?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        };
+
+        // Lógica de Zoom (Lente Espiă)
+        container.addEventListener("mousemove", moveLens);
+        container.addEventListener("mouseleave", () => {
+            lens.style.display = "none";
+            result.style.display = "none";
+        });
+
+        container.addEventListener("mouseenter", () => {
+            // Só ativa zoom em desktop
+            if (window.innerWidth > 768) {
+                lens.style.display = "block";
+                result.style.display = "block";
+            }
+        });
+
+        function moveLens(e) {
+            e.preventDefault();
+
+            // Posição do mouse relativa à imagem
+            const pos = getCursorPos(e);
+            let x = pos.x - (lens.offsetWidth / 2);
+            let y = pos.y - (lens.offsetHeight / 2);
+
+            // Limites da lente
+            if (x > modalImg.width - lens.offsetWidth) { x = modalImg.width - lens.offsetWidth; }
+            if (x < 0) { x = 0; }
+            if (y > modalImg.height - lens.offsetHeight) { y = modalImg.height - lens.offsetHeight; }
+            if (y < 0) { y = 0; }
+
+            // Mover lente
+            lens.style.left = x + "px";
+            lens.style.top = y + "px";
+
+            // Mover background do resultado (Zoom 2.5x)
+            const cx = result.offsetWidth / lens.offsetWidth;
+            const cy = result.offsetHeight / lens.offsetHeight;
+
+            result.style.backgroundSize = (modalImg.width * cx) + "px " + (modalImg.height * cy) + "px";
+            result.style.backgroundPosition = "-" + (x * cx) + "px -" + (y * cy) + "px";
+        }
+
+        function getCursorPos(e) {
+            let a, x = 0, y = 0;
+            e = e || window.event;
+            a = modalImg.getBoundingClientRect();
+            x = e.pageX - a.left;
+            y = e.pageY - a.top;
+            x = x - window.pageXOffset;
+            y = y - window.pageYOffset;
+            return { x: x, y: y };
+        }
+
+        // Ativar listeners nos cards de produto
+        document.querySelectorAll('.product-card').forEach(card => {
+            const btn = card.querySelector('.add-to-cart-btn');
+            const imgWrapper = card.querySelector('.product-image-wrapper');
+
+            const getData = () => ({
+                img: card.querySelector('img').src,
+                title: card.querySelector('.product-title').innerText,
+                price: card.querySelector('.price-current').innerText,
+                oldPrice: card.querySelector('.price-old').innerText,
+                installment: card.querySelector('.installment').innerText,
+                category: card.querySelector('.product-category').innerText
+            });
+
+            btn.onclick = (e) => { e.preventDefault(); openProductModal(getData()); };
+            imgWrapper.onclick = (e) => { e.preventDefault(); openProductModal(getData()); };
+        });
+
+    </script>
 </body>
 
 </html>
