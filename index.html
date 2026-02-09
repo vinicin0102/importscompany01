@@ -325,6 +325,12 @@
         const result = document.getElementById("zoomResult");
         const container = document.getElementById("modalImageContainer");
 
+        // Init Cart Count
+        document.addEventListener('DOMContentLoaded', () => {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length > 0) updateCartCount(cart.length);
+        });
+
         // Fechar Modal
         closeBtn.onclick = () => modal.style.display = "none";
         window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
@@ -357,10 +363,30 @@
 
         // Ações de Compra
         window.checkout = () => {
-            const product = document.getElementById("modalTitle").innerText;
-            alert(`Redirecionando para o Checkout Seguro: ${product}`);
-            // window.location.href = "/checkout"; // Link real aqui
+            const product = {
+                title: document.getElementById("modalTitle").innerText,
+                price: document.getElementById("modalPrice").innerText,
+                img: document.getElementById("modalImage").src,
+                size: document.querySelector('.size-btn.selected') ? document.querySelector('.size-btn.selected').innerText : 'Padrão',
+                color: document.querySelector('.color-btn.selected') ? document.querySelector('.color-btn.selected').style.backgroundColor : 'Padrão'
+            };
+
+            // Salvar no LocalStorage
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.push(product);
+            localStorage.setItem('cart', JSON.stringify(cart));
+
+            // Atualizar badge do carrinho
+            updateCartCount(cart.length);
+
+            // Redirecionar para o carrinho
+            window.location.href = "cart.html";
         };
+
+        function updateCartCount(count) {
+            const badges = document.querySelectorAll('.cart-count');
+            badges.forEach(b => b.textContent = count);
+        }
 
         window.buyWhatsapp = () => {
             const product = document.getElementById("modalTitle").innerText;

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrinho de Compras | Imports Company</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css?v=2026">
+    <style>
+        .cart-page {
+            padding: 40px 0;
+            min-height: 60vh;
+        }
+
+        .cart-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .cart-items {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .cart-summary {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+        }
+
+        .cart-item {
+            display: flex;
+            gap: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .cart-item img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .item-details h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            color: var(--primary-navy);
+        }
+
+        .item-price {
+            font-weight: bold;
+            color: var(--primary-navy);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary-navy);
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--gold);
+            color: var(--primary-navy);
+            font-weight: bold;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .checkout-btn:hover {
+            background: var(--gold-dark);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .cart-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header (Simplificado) -->
+    <header class="header" style="background: var(--primary-navy); position: relative;">
+        <div class="container header-content">
+            <div class="logo">
+                <a href="index.html"><img src="images/logo.jpg" alt="Imports Company"
+                        style="height: 50px; border-radius: 50%;"></a>
+            </div>
+            <nav class="nav-desktop">
+                <ul>
+                    <li><a href="index.html" style="color: white;">Voltar para Loja</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="cart-page">
+        <div class="container cart-container">
+            <!-- Items List -->
+            <div class="cart-items" id="cartItemsContainer">
+                <h2>Seu Carrinho</h2>
+                <div id="emptyCartMessage" style="text-align: center; padding: 40px; display: none;">
+                    <i class="fas fa-shopping-basket" style="font-size: 3rem; color: #ddd; margin-bottom: 20px;"></i>
+                    <p>Seu carrinho está vazio.</p>
+                    <a href="index.html" class="btn" style="margin-top: 20px; display: inline-block;">Continuar
+                        Comprando</a>
+                </div>
+                <!-- Items will be injected here via JS -->
+            </div>
+
+            <!-- Summary -->
+            <div class="cart-summary">
+                <h3>Resumo do Pedido</h3>
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="subtotal">R$ 0,00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Frete</span>
+                    <span style="color: green;">Grátis</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span id="total">R$ 0,00</span>
+                </div>
+                <button class="checkout-btn" onclick="checkoutFinal()">FINALIZAR COMPRA</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                &copy; 2026 Imports Company. Todos os direitos reservados.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Load Cart from LocalStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const container = document.getElementById('cartItemsContainer');
+            const emptyMsg = document.getElementById('emptyCartMessage');
+
+            if (cart.length === 0) {
+                emptyMsg.style.display = 'block';
+                return;
+            }
+
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'cart-item';
+                itemEl.innerHTML = `
+                    <img src="${item.img}" alt="${item.title}">
+                    <div class="item-details" style="flex-grow: 1;">
+                        <h4>${item.title}</h4>
+                        <p style="font-size: 0.9rem; color: #777;">Tamanho: ${item.size} | Cor: ${item.color}</p>
+                        <div class="item-price">${item.price}</div>
+                    </div>
+                    <button onclick="removeItem(${index})" style="color: red; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                `;
+                container.appendChild(itemEl);
+
+                // Parse price (R$ 1.000,00 -> 1000.00)
+                const priceValue = parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.'));
+                total += priceValue;
+            });
+
+            // Update Totals
+            const totalFormatted = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('subtotal').innerText = totalFormatted;
+            document.getElementById('total').innerText = totalFormatted;
+        });
+
+        function removeItem(index) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            location.reload();
+        }
+
+        function checkoutFinal() {
+            alert('Redirecionando para o Pagamento Seguro...');
+            // window.location.href = '/checkout-gateway';
+        }
+    </script>
+</body>
+
+</html>
