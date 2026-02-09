@@ -331,10 +331,16 @@
                 return;
             }
 
-            grid.innerHTML = list.map(p => `
+            grid.innerHTML = list.map(p => {
+                // Determinar caminho da imagem (URL externa ou local)
+                const imageSrc = p.image && p.image.startsWith('http')
+                    ? p.image
+                    : `../${p.image || 'images/placeholder.png'}`;
+
+                return `
                 <div class="product-card-admin ${!p.active ? 'inactive' : ''}">
                     <div class="product-image">
-                        <img src="../${p.image || 'images/placeholder.png'}" alt="${p.name}" onerror="this.src='../images/placeholder.png'">
+                        <img src="${imageSrc}" alt="${p.name}" onerror="this.src='../images/placeholder.png'">
                         ${p.badge ? `<span class="badge badge-${p.badge}">${getBadgeText(p.badge)}</span>` : ''}
                     </div>
                     <div class="product-info">
@@ -354,7 +360,7 @@
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function getBadgeText(badge) {
