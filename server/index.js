@@ -22,6 +22,28 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
         supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
         console.log('✅ Supabase Client configurado.');
+
+        // Criar bucket de imagens automaticamente (se não existir)
+        (async () => {
+            try {
+                const { data: buckets } = await supabase.storage.listBuckets();
+                const imagesBucket = buckets?.find(b => b.name === 'images');
+
+                if (!imagesBucket) {
+                    const { error } = await supabase.storage.createBucket('images', {
+                        public: true,
+                        fileSizeLimit: 5242880 // 5MB
+                    });
+                    if (!error) console.log('📁 Bucket "images" criado com sucesso!');
+                    else console.log('⚠️ Bucket já existe ou erro:', error.message);
+                } else {
+                    console.log('📁 Bucket "images" já existe.');
+                }
+            } catch (e) {
+                console.log('⚠️ Não foi possível verificar/criar bucket:', e.message);
+            }
+        })();
+
     } catch (e) {
         console.error('⚠️ Erro ao configurar Supabase:', e.message);
     }

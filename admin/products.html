@@ -523,7 +523,6 @@
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Token expirado ou inválido
                         localStorage.removeItem('adminToken');
                         localStorage.removeItem('adminUser');
                         window.location.href = 'login.html';
@@ -532,9 +531,13 @@
                     throw new Error(data.error);
                 }
 
+                // Salvar o caminho/URL da imagem
                 document.getElementById('product-image').value = data.path;
+
+                // Preview: verificar se é URL absoluta ou caminho local
+                const imgSrc = data.path.startsWith('http') ? data.path : `../${data.path}`;
                 document.getElementById('image-preview').innerHTML = `
-                    <img src="../${data.path}" alt="Preview" style="max-width: 100%; max-height: 200px; object-fit: contain;">
+                    <img src="${imgSrc}" alt="Preview" style="max-width: 100%; max-height: 200px; object-fit: contain;">
                 `;
                 showToast('Imagem enviada com sucesso!');
 
