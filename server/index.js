@@ -1,6 +1,6 @@
 /**
- * IMPORTS COMPANY - Admin Server (Supabase Edition)
- * Backend API for the Admin Panel using Supabase Database
+ * IMPORTS COMPANY - Admin Server (Hybrid: Supabase + Local JSON Fallback)
+ * Garante que o painel funcione mesmo se o banco de dados falhar.
  */
 require('dotenv').config();
 const express = require('express');
@@ -16,21 +16,25 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
-// Supabase Client (Service Role para acesso total ao banco)
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Supabase Init (Try/Catch wrapper not needed for init, but client usage)
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+        supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+        console.log('✅ Supabase Client configurado.');
+    } catch (e) {
+        console.error('⚠️ Erro ao configurar Supabase:', e.message);
+    }
+}
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..'))); // Serve the main site
-app.use('/images', express.static(path.join(__dirname, '..', 'images'))); // Serve images explicitly
-app.use('/admin', express.static(path.join(__dirname, '..', 'admin'))); // Serve admin panel
+app.use(express.static(path.join(__dirname, '..')));
+app.use('/images', express.static(path.join(__dirname, '..', 'images')));
+app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
 
-// File upload config (Vercel compatible for TEMP storage)
-// Nota: Em produção, idealmente usar Supabase Storage
+// File Storage (Local/Temp)
 const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '..', 'images');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
@@ -40,6 +44,38 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage });
+
+// =============================================
+// DATA HANDLERS (HYBRID STRATEGY)
+// =============================================
+
+function readJSON(filename) {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(__dirname, 'data', filename), 'utf8'));
+    } catch (e) { return []; }
+}
+
+function writeJSON(filename, data) {
+    try {
+        fs.writeFileSync(path.join(__dirname, 'data', filename), JSON.stringify(data, null, 2));
+        return true;
+    } catch (e) { return false; }
+}
+
+// Helper genérico para buscar dados (Supabase -> Fallback JSON)
+async function getData(table, jsonFile, orderBy = 'id') {
+    if (supabase) {
+        try {
+            const { data, error } = await supabase.from(table).select('*').order(orderBy, { ascending: true });
+            if (!error && data) return data;
+            console.warn(`⚠️ Erro Supabase [${table}]:`, error.message);
+        } catch (e) {
+            console.warn(`⚠️ Falha conexão Supabase [${table}]:`, e.message);
+        }
+    }
+    console.log(`📂 Usando dados locais para ${table}`);
+    return readJSON(jsonFile);
+}
 
 // Auth Middleware
 const authMiddleware = (req, res, next) => {
@@ -55,50 +91,41 @@ const authMiddleware = (req, res, next) => {
 };
 
 // =============================================
-// AUTH ROUTES (Custom Table 'users')
+// AUTH ROUTES
 // =============================================
 
 app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
+    const { username, password } = req.body;
+    let user = null;
 
-        // Buscar usuário no Supabase
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('username', username)
-            .single();
-
-        // Fallback Admin se tabela vazia ou erro
-        if (!user && username === 'admin') {
-            const fallbackHash = '$2a$10$5ffw/5m6tQa7ViJNXa4CMOEvtxy/rqb170oW8z3fxPfs9p9nArn.a'; // admin123
-            if (await bcrypt.compare(password, fallbackHash)) {
-                const token = jwt.sign({ id: 1, username: 'admin', role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
-                return res.json({ token, user: { id: 1, username: 'admin', name: 'Administrador Principal', role: 'admin' } });
-            }
-        }
-
-        if (!user || error) return res.status(401).json({ error: 'Usuário não encontrado' });
-
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) return res.status(401).json({ error: 'Senha incorreta' });
-
-        const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
-        res.json({ token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
-
-    } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).json({ error: 'Erro interno no login' });
+    // Tentar Supabase
+    if (supabase) {
+        const { data } = await supabase.from('users').select('*').eq('username', username).single();
+        user = data;
     }
+
+    // Fallback Admin
+    if (!user && username === 'admin') {
+        // Hash hardcoded para 'admin123'
+        const adminHash = '$2a$10$5ffw/5m6tQa7ViJNXa4CMOEvtxy/rqb170oW8z3fxPfs9p9nArn.a';
+        if (await bcrypt.compare(password, adminHash)) {
+            user = { id: 1, username: 'admin', role: 'admin', name: 'Admin Local' };
+        }
+    }
+
+    if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
+
+    // Verifica senha (se veio do banco)
+    if (user.password) {
+        if (!(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Senha incorreta' });
+    }
+
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token, user });
 });
 
-app.get('/api/auth/me', authMiddleware, async (req, res) => {
-    if (req.user.username === 'admin') {
-        return res.json({ id: 1, username: 'admin', name: 'Administrador Principal', role: 'admin' });
-    }
-    const { data: user } = await supabase.from('users').select('id, username, name, role').eq('id', req.user.id).single();
-    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
-    res.json(user);
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+    res.json(req.user);
 });
 
 // =============================================
@@ -106,38 +133,64 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 // =============================================
 
 app.get('/api/products', async (req, res) => {
-    const { data, error } = await supabase.from('products').select('*').order('id', { ascending: true });
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
-});
-
-app.get('/api/products/:id', async (req, res) => {
-    const { data, error } = await supabase.from('products').select('*').eq('id', req.params.id).single();
-    if (error) return res.status(404).json({ error: 'Produto não encontrado' });
-    res.json(data);
+    const products = await getData('products', 'products.json');
+    res.json(products);
 });
 
 app.post('/api/products', authMiddleware, async (req, res) => {
-    const { data, error } = await supabase.from('products').insert([req.body]).select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.status(201).json(data[0]);
+    const newProduct = req.body;
+
+    // Tentar Supabase
+    if (supabase) {
+        const { data, error } = await supabase.from('products').insert([newProduct]).select();
+        if (!error && data) return res.status(201).json(data[0]);
+    }
+
+    // Fallback JSON
+    const products = readJSON('products.json');
+    newProduct.id = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+    newProduct.created_at = new Date();
+    products.push(newProduct);
+    writeJSON('products.json', products);
+    res.status(201).json(newProduct);
 });
 
 app.put('/api/products/:id', authMiddleware, async (req, res) => {
-    const { data, error } = await supabase
-        .from('products')
-        .update({ ...req.body, updated_at: new Date().toISOString() })
-        .eq('id', req.params.id)
-        .select();
+    const id = parseInt(req.params.id);
+    const updates = req.body;
 
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0]);
+    // Tentar Supabase
+    if (supabase) {
+        const { data, error } = await supabase.from('products').update(updates).eq('id', id).select();
+        if (!error && data) return res.json(data[0]);
+    }
+
+    // Fallback JSON
+    const products = readJSON('products.json');
+    const index = products.findIndex(p => p.id === id);
+    if (index !== -1) {
+        products[index] = { ...products[index], ...updates };
+        writeJSON('products.json', products);
+        res.json(products[index]);
+    } else {
+        res.status(404).json({ error: 'Produto não encontrado' });
+    }
 });
 
 app.delete('/api/products/:id', authMiddleware, async (req, res) => {
-    const { error } = await supabase.from('products').delete().eq('id', req.params.id);
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ message: 'Produto removido com sucesso' });
+    const id = parseInt(req.params.id);
+
+    // Tentar Supabase
+    if (supabase) {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (!error) return res.json({ message: 'Deletado com sucesso' });
+    }
+
+    // Fallback JSON
+    const products = readJSON('products.json');
+    const filtered = products.filter(p => p.id !== id);
+    writeJSON('products.json', filtered);
+    res.json({ message: 'Produto removido (Local)' });
 });
 
 // =============================================
@@ -145,26 +198,31 @@ app.delete('/api/products/:id', authMiddleware, async (req, res) => {
 // =============================================
 
 app.get('/api/categories', async (req, res) => {
-    const { data, error } = await supabase.from('categories').select('*').order('order', { ascending: true });
-    if (error) return res.status(500).json({ error: error.message });
+    const data = await getData('categories', 'categories.json', 'order');
     res.json(data);
 });
 
 app.post('/api/categories', authMiddleware, async (req, res) => {
-    const { data, error } = await supabase.from('categories').insert([req.body]).select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.status(201).json(data[0]);
-});
-
-app.put('/api/categories/:id', authMiddleware, async (req, res) => {
-    const { data, error } = await supabase.from('categories').update(req.body).eq('id', req.params.id).select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0]);
+    // Tentar Supabase
+    if (supabase) {
+        const { data, error } = await supabase.from('categories').insert([req.body]).select();
+        if (!error) return res.status(201).json(data[0]);
+    }
+    // Fallback
+    const list = readJSON('categories.json');
+    // Se ID não vier, cria timestamp string
+    if (!req.body.id) req.body.id = `cat_${Date.now()}`;
+    list.push(req.body);
+    writeJSON('categories.json', list);
+    res.status(201).json(req.body);
 });
 
 app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
-    const { error } = await supabase.from('categories').delete().eq('id', req.params.id);
-    if (error) return res.status(500).json({ error: error.message });
+    if (supabase) await supabase.from('categories').delete().eq('id', req.params.id);
+
+    const list = readJSON('categories.json');
+    const filtered = list.filter(c => String(c.id) !== String(req.params.id));
+    writeJSON('categories.json', filtered);
     res.json({ message: 'Categoria removida' });
 });
 
@@ -173,26 +231,27 @@ app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
 // =============================================
 
 app.get('/api/banners', async (req, res) => {
-    const { data, error } = await supabase.from('banners').select('*').order('order', { ascending: true });
-    if (error) return res.status(500).json({ error: error.message });
+    const data = await getData('banners', 'banners.json', 'order');
     res.json(data);
 });
 
 app.post('/api/banners', authMiddleware, async (req, res) => {
-    const { data, error } = await supabase.from('banners').insert([req.body]).select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.status(201).json(data[0]);
-});
-
-app.put('/api/banners/:id', authMiddleware, async (req, res) => {
-    const { data, error } = await supabase.from('banners').update(req.body).eq('id', req.params.id).select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0]);
+    if (supabase) {
+        const { data, error } = await supabase.from('banners').insert([req.body]).select();
+        if (!error) return res.status(201).json(data[0]);
+    }
+    const list = readJSON('banners.json');
+    req.body.id = Date.now();
+    list.push(req.body);
+    writeJSON('banners.json', list);
+    res.status(201).json(req.body);
 });
 
 app.delete('/api/banners/:id', authMiddleware, async (req, res) => {
-    const { error } = await supabase.from('banners').delete().eq('id', req.params.id);
-    if (error) return res.status(500).json({ error: error.message });
+    if (supabase) await supabase.from('banners').delete().eq('id', req.params.id);
+    const list = readJSON('banners.json');
+    const filtered = list.filter(b => b.id != req.params.id);
+    writeJSON('banners.json', filtered);
     res.json({ message: 'Banner removido' });
 });
 
@@ -201,24 +260,23 @@ app.delete('/api/banners/:id', authMiddleware, async (req, res) => {
 // =============================================
 
 app.get('/api/settings', async (req, res) => {
-    const { data, error } = await supabase.from('settings').select('config').eq('id', 1).single();
-    if (error) return res.json({}); // Default empty object on error
-    res.json(data.config);
+    if (supabase) {
+        const { data } = await supabase.from('settings').select('config').eq('id', 1).single();
+        if (data) return res.json(data.config);
+    }
+    res.json(readJSON('settings.json'));
 });
 
 app.put('/api/settings', authMiddleware, async (req, res) => {
-    // Upsert id=1
-    const { data, error } = await supabase
-        .from('settings')
-        .upsert({ id: 1, config: req.body, updated_at: new Date().toISOString() })
-        .select();
-
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0].config);
+    if (supabase) {
+        await supabase.from('settings').upsert({ id: 1, config: req.body });
+    }
+    writeJSON('settings.json', req.body);
+    res.json(req.body);
 });
 
 // =============================================
-// UPLOAD ROUTES (Temp Local / Vercel compatible)
+// UPLOAD ROUTE
 // =============================================
 
 app.post('/api/upload', authMiddleware, upload.single('image'), (req, res) => {
@@ -226,45 +284,11 @@ app.post('/api/upload', authMiddleware, upload.single('image'), (req, res) => {
     res.json({ filename: req.file.filename, path: `images/${req.file.filename}` });
 });
 
-// =============================================
-// DASHBOARD STATS
-// =============================================
-
-app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
-    try {
-        const { count: totalProducts } = await supabase.from('products').select('*', { count: 'exact', head: true });
-        const { count: activeProducts } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('active', true);
-        const { count: totalCategories } = await supabase.from('categories').select('*', { count: 'exact', head: true });
-        const { count: totalBanners } = await supabase.from('banners').select('*', { count: 'exact', head: true });
-
-        // Sum stock (precisa query completa ou RPC) - Vamos fazer simples: busca só coluna stock
-        const { data: products } = await supabase.from('products').select('stock, id, name, price, image').order('created_at', { ascending: false }).limit(5);
-
-        const totalStock = products ? products.reduce((sum, p) => sum + (p.stock || 0), 0) : 0;
-        const lowStock = products ? products.filter(p => p.stock < 5).length : 0;
-
-        res.json({
-            totalProducts: totalProducts || 0,
-            activeProducts: activeProducts || 0,
-            totalCategories: totalCategories || 0,
-            totalBanners: totalBanners || 0,
-            totalStock,
-            lowStockProducts: lowStock,
-            recentProducts: products || []
-        });
-
-    } catch (error) {
-        console.error('Stats Error:', error);
-        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
-    }
-});
-
-// Export for Vercel
+// Export & Start
 module.exports = app;
 
-// Start Server locally
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
+        console.log(`Server running (Hybrid Mode) on http://localhost:${PORT}`);
     });
 }

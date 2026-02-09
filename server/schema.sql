@@ -1,18 +1,18 @@
 -- =============================================
--- IMPORTS COMPANY - SUPABASE SCHEMA
--- Execute este script no SQL Editor do Supabase
+-- IMPORTS COMPANY - SUPABASE SCHEMA (FINAL)
+-- Execute este script no SQL Editor para criar as tabelas
 -- =============================================
 
--- Remover tabelas antigas (cuidado!)
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS categories;
-DROP TABLE IF EXISTS banners;
-DROP TABLE IF EXISTS settings;
-DROP TABLE IF EXISTS users;
+-- Remover tabelas antigas forçadamente
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS banners CASCADE;
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
--- Tabela de Categorias
+-- Tabela de Categorias (ID é TEXTO para aceitar 'bags', 'mens-fashion')
 CREATE TABLE categories (
-    id SERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     icon TEXT,
     link TEXT,
