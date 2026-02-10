@@ -4,118 +4,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Admin | Imports Company</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/admin/css/admin.css">
+    <title>Login Administrativo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f1117;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #f0f0f5;
+        }
+
+        .login-card {
+            background: #1a1d27;
+            border: 1px solid #2e3347;
+            padding: 40px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #8b8fa3;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #8b8fa3;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #222535;
+            border: 1px solid #2e3347;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            background: #7d6ff0;
+        }
+
+        .btn-login:disabled {
+            background: #4a4d60;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 16px;
+            display: none;
+        }
+    </style>
 </head>
 
-<body class="login-page">
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <div class="login-logo">
-                    <i class="fas fa-gem"></i>
-                </div>
-                <h1>Imports Company</h1>
-                <p>Painel Administrativo</p>
-            </div>
-
-            <form id="login-form" class="login-form">
-                <div class="form-group">
-                    <label for="username">
-                        <i class="fas fa-user"></i>
-                        Usuário
-                    </label>
-                    <input type="text" id="username" name="username" required placeholder="Digite seu usuário">
-                </div>
-
-                <div class="form-group">
-                    <label for="password">
-                        <i class="fas fa-lock"></i>
-                        Senha
-                    </label>
-                    <input type="password" id="password" name="password" required placeholder="Digite sua senha">
-                </div>
-
-                <div class="error-message" id="error-message"></div>
-
-                <button type="submit" class="btn-login">
-                    <span>Entrar</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </form>
-
-            <div class="login-footer">
-                <p>&copy; 2026 Imports Company. Todos os direitos reservados.</p>
-            </div>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <h1>Imports Company</h1>
+            <p>Acesse o painel administrativo</p>
         </div>
-
-        <div class="login-bg">
-            <div class="floating-shapes">
-                <div class="shape shape-1"></div>
-                <div class="shape shape-2"></div>
-                <div class="shape shape-3"></div>
+        <form id="login-form">
+            <div class="form-group">
+                <label>Usuário</label>
+                <input type="text" id="username" class="form-input" required placeholder="admin">
             </div>
-        </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="password" class="form-input" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-login" id="btn-submit">Entrar</button>
+            <div class="error-msg" id="error-msg">Credenciais inválidas</div>
+        </form>
     </div>
 
     <script>
-        const API_URL = window.location.origin;
-
-        // Check if already logged in
-        const token = localStorage.getItem('adminToken');
-        if (token) {
-            window.location.href = '/admin/index.html';
-        }
-
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorEl = document.getElementById('error-message');
-            const btn = e.target.querySelector('button');
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const btn = document.getElementById('btn-submit');
+            const msg = document.getElementById('error-msg');
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
             btn.disabled = true;
-            errorEl.textContent = '';
+            btn.textContent = 'Carregando...';
+            msg.style.display = 'none';
 
             try {
-                console.log('Enviando requisição de login para:', `${API_URL}/api/auth/login`);
-
-                const response = await fetch(`${API_URL}/api/auth/login`, {
+                const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username: user, password: pass })
                 });
 
-                // Debug: Verifica o tipo de conteúdo retornado
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('SERVER ERROR (NOT JSON):', text);
-                    throw new Error(`Erro no servidor: ${response.status} (Verifique o console)`);
-                }
+                const data = await res.json();
 
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Erro ao fazer login');
-                }
+                if (!res.ok) throw new Error(data.error || 'Erro no login');
 
                 localStorage.setItem('adminToken', data.token);
                 localStorage.setItem('adminUser', JSON.stringify(data.user));
+                window.location.href = 'index.html';
 
-                window.location.href = '/admin/index.html';
-
-            } catch (error) {
-                console.error(error);
-                errorEl.textContent = error.message;
-                btn.innerHTML = '<span>Entrar</span><i class="fas fa-arrow-right"></i>';
+            } catch (err) {
+                msg.textContent = err.message;
+                msg.style.display = 'block';
                 btn.disabled = false;
+                btn.textContent = 'Entrar';
             }
         });
     </script>
