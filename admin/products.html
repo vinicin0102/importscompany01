@@ -685,6 +685,99 @@
             font-size: 0.95rem;
         }
 
+        /* ====== VARIANTS TABLE ====== */
+        .variants-section {
+            margin-top: 4px;
+        }
+
+        .variants-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .variants-section .section-header h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .variant-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        .variant-table th {
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .variant-table td {
+            padding: 6px 4px;
+        }
+
+        .variant-table input,
+        .variant-table select {
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.82rem;
+            outline: none;
+        }
+
+        .variant-table input:focus,
+        .variant-table select:focus {
+            border-color: var(--accent);
+        }
+
+        .variant-table .remove-variant {
+            background: transparent;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .variant-table .remove-variant:hover {
+            background: rgba(231, 76, 60, 0.15);
+        }
+
+        .variant-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(108, 92, 231, 0.08);
+            border: 1px solid rgba(108, 92, 231, 0.2);
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .variant-total span {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .variant-total .total-value {
+            color: var(--success);
+            font-size: 1rem;
+        }
+
         /* ====== RESPONSIVE ====== */
         @media (max-width: 768px) {
             .sidebar {
@@ -827,28 +920,49 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Estoque *</label>
-                            <input type="number" id="f-stock" required placeholder="20">
-                        </div>
-                        <div class="form-group">
                             <label>Status</label>
                             <select id="f-active">
                                 <option value="true">Ativo</option>
                                 <option value="false">Inativo</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label>Imagem do Produto</label>
+                            <div class="upload-area" id="upload-area"
+                                onclick="document.getElementById('image-file').click()">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Clique para selecionar imagem</p>
+                                <small>JPG, PNG, WebP (máx 5MB)</small>
+                            </div>
+                            <input type="file" id="image-file" accept="image/*" onchange="handleImageUpload(this)">
+                            <input type="hidden" id="f-image">
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Imagem do Produto</label>
-                        <div class="upload-area" id="upload-area"
-                            onclick="document.getElementById('image-file').click()">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Clique para selecionar uma imagem</p>
-                            <small>JPG, PNG ou WebP (máx 5MB)</small>
+                    <!-- VARIANTES: COR / TAMANHO / QUANTIDADE -->
+                    <div class="form-group variants-section">
+                        <div class="section-header">
+                            <h4><i class="fas fa-palette"></i> Variantes (Cor / Tamanho / Quantidade)</h4>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addVariant()">
+                                <i class="fas fa-plus"></i> Adicionar
+                            </button>
                         </div>
-                        <input type="file" id="image-file" accept="image/*" onchange="handleImageUpload(this)">
-                        <input type="hidden" id="f-image">
+                        <table class="variant-table" id="variant-table">
+                            <thead>
+                                <tr>
+                                    <th>Cor</th>
+                                    <th>Tamanho</th>
+                                    <th>Qtd</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="variant-body"></tbody>
+                        </table>
+                        <div class="variant-total">
+                            <span>Estoque Total:</span>
+                            <span class="total-value" id="variant-total">0 peças</span>
+                        </div>
+                        <input type="hidden" id="f-stock">
                     </div>
                 </div>
 
@@ -1004,6 +1118,7 @@
             document.getElementById('product-form').reset();
             document.getElementById('f-image').value = '';
             resetUploadArea();
+            loadVariants([]);
             document.getElementById('product-modal').classList.add('active');
         }
 
@@ -1017,9 +1132,11 @@
             document.getElementById('f-badge').value = p.badge || '';
             document.getElementById('f-price').value = p.price;
             document.getElementById('f-old-price').value = p.oldPrice || '';
-            document.getElementById('f-stock').value = p.stock;
             document.getElementById('f-active').value = String(p.active);
             document.getElementById('f-image').value = p.image || '';
+
+            // Carregar variantes
+            loadVariants(p.variants || []);
 
             const area = document.getElementById('upload-area');
             if (p.image) {
@@ -1102,9 +1219,86 @@
             input.value = '';
         }
 
+        // ====== VARIANTS MANAGEMENT ======
+        function addVariant(color = '', size = '', qty = 0) {
+            const tbody = document.getElementById('variant-body');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <input type="text" class="v-color" placeholder="Ex: Preto" value="${color}" list="color-options">
+                </td>
+                <td>
+                    <select class="v-size">
+                        <option value="" ${!size ? 'selected' : ''}>-</option>
+                        <option value="PP" ${size === 'PP' ? 'selected' : ''}>PP</option>
+                        <option value="P" ${size === 'P' ? 'selected' : ''}>P</option>
+                        <option value="M" ${size === 'M' ? 'selected' : ''}>M</option>
+                        <option value="G" ${size === 'G' ? 'selected' : ''}>G</option>
+                        <option value="GG" ${size === 'GG' ? 'selected' : ''}>GG</option>
+                        <option value="XGG" ${size === 'XGG' ? 'selected' : ''}>XGG</option>
+                        <option value="36" ${size === '36' ? 'selected' : ''}>36</option>
+                        <option value="37" ${size === '37' ? 'selected' : ''}>37</option>
+                        <option value="38" ${size === '38' ? 'selected' : ''}>38</option>
+                        <option value="39" ${size === '39' ? 'selected' : ''}>39</option>
+                        <option value="40" ${size === '40' ? 'selected' : ''}>40</option>
+                        <option value="41" ${size === '41' ? 'selected' : ''}>41</option>
+                        <option value="42" ${size === '42' ? 'selected' : ''}>42</option>
+                        <option value="43" ${size === '43' ? 'selected' : ''}>43</option>
+                        <option value="44" ${size === '44' ? 'selected' : ''}>44</option>
+                        <option value="UN" ${size === 'UN' ? 'selected' : ''}>Único</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="v-qty" min="0" value="${qty}" placeholder="0" oninput="updateVariantTotal()">
+                </td>
+                <td>
+                    <button type="button" class="remove-variant" onclick="this.closest('tr').remove(); updateVariantTotal();" title="Remover">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            updateVariantTotal();
+        }
+
+        function loadVariants(variants) {
+            document.getElementById('variant-body').innerHTML = '';
+            if (variants && variants.length > 0) {
+                variants.forEach(v => addVariant(v.color || '', v.size || '', v.qty || 0));
+            }
+            updateVariantTotal();
+        }
+
+        function getVariants() {
+            const rows = document.querySelectorAll('#variant-body tr');
+            const variants = [];
+            rows.forEach(row => {
+                const color = row.querySelector('.v-color').value.trim();
+                const size = row.querySelector('.v-size').value;
+                const qty = parseInt(row.querySelector('.v-qty').value) || 0;
+                if (color || size) {
+                    variants.push({ color, size, qty });
+                }
+            });
+            return variants;
+        }
+
+        function updateVariantTotal() {
+            const variants = getVariants();
+            const total = variants.reduce((sum, v) => sum + (v.qty || 0), 0);
+            document.getElementById('variant-total').textContent = `${total} peça${total !== 1 ? 's' : ''}`;
+            // Atualizar campo hidden de estoque
+            document.getElementById('f-stock').value = total;
+        }
+
         // ====== SAVE PRODUCT ======
         async function saveProduct(e) {
             e.preventDefault();
+
+            const variants = getVariants();
+            const totalStock = variants.length > 0
+                ? variants.reduce((sum, v) => sum + (v.qty || 0), 0)
+                : parseInt(document.getElementById('f-stock').value) || 0;
 
             const productData = {
                 name: document.getElementById('f-name').value,
@@ -1112,7 +1306,8 @@
                 badge: document.getElementById('f-badge').value,
                 price: parseFloat(document.getElementById('f-price').value),
                 oldPrice: parseFloat(document.getElementById('f-old-price').value) || null,
-                stock: parseInt(document.getElementById('f-stock').value),
+                stock: totalStock,
+                variants: variants,
                 active: document.getElementById('f-active').value === 'true',
                 image: document.getElementById('f-image').value || 'images/placeholder.png',
                 rating: 5,
