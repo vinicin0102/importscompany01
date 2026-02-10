@@ -6,7 +6,7 @@
             "use": "@vercel/node"
         },
         {
-            "src": "admin/**/*",
+            "src": "admin/**",
             "use": "@vercel/static"
         },
         {
@@ -22,7 +22,7 @@
             "use": "@vercel/static"
         },
         {
-            "src": "images/**/*",
+            "src": "images/**",
             "use": "@vercel/static"
         }
     ],
@@ -32,12 +32,18 @@
             "dest": "/server/index.js"
         },
         {
-            "src": "/admin",
-            "dest": "/admin/index.html"
+            "src": "/admin/(.*)",
+            "dest": "/admin/$1",
+            "headers": {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
         },
         {
-            "src": "/admin/(.*)",
-            "dest": "/admin/$1"
+            "src": "/admin",
+            "dest": "/admin/index.html",
+            "headers": {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
         },
         {
             "src": "/(.*)",
