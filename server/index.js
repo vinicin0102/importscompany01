@@ -356,13 +356,13 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
 });
 
 // =============================================
-// DEBUG ROUTE
+// DEBUG ROUTES
 // =============================================
 app.get('/api/debug', (req, res) => {
     const products = loadData('products', 'products.json');
     res.json({
         status: 'OK',
-        version: '3.0',
+        version: '3.1',
         productsCount: products.length,
         isVercel: !!process.env.VERCEL,
         hasGitHubToken: !!GITHUB_TOKEN,
@@ -371,6 +371,35 @@ app.get('/api/debug', (req, res) => {
         githubRepo: GITHUB_REPO,
         timestamp: new Date().toISOString()
     });
+});
+
+// Testar GitHub token
+app.get('/api/debug/github', async (req, res) => {
+    if (!GITHUB_TOKEN) return res.json({ error: 'GITHUB_TOKEN não configurado' });
+    try {
+        const user = await githubRequest('/user');
+        const file = await githubRequest(`/repos/${GITHUB_REPO}/contents/server/data/products.json?ref=${GITHUB_BRANCH}`);
+        res.json({
+            status: 'OK',
+            githubUser: user.login,
+            repo: GITHUB_REPO,
+            fileSha: file.sha,
+            tokenWorking: true
+        });
+    } catch (err) {
+        res.json({ status: 'ERROR', error: err.message, tokenWorking: false });
+    }
+});
+
+// Testar persistência (forçar um commit)
+app.get('/api/debug/test-persist', authMiddleware, async (req, res) => {
+    try {
+        const products = loadData('products', 'products.json');
+        await persistToGitHub('products', products);
+        res.json({ status: 'OK', message: 'Dados persistidos com sucesso no GitHub!' });
+    } catch (err) {
+        res.json({ status: 'ERROR', error: err.message });
+    }
 });
 
 // Export & Start
