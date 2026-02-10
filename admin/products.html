@@ -685,6 +685,118 @@
             font-size: 0.95rem;
         }
 
+        /* ====== IMAGE GALLERY ====== */
+        .gallery-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .gallery-section .section-header h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .gallery-thumb {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+
+        .gallery-thumb:hover {
+            border-color: var(--accent);
+        }
+
+        .gallery-thumb.primary {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.3);
+        }
+
+        .gallery-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-thumb .thumb-actions {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 4px;
+        }
+
+        .gallery-thumb .thumb-star {
+            background: rgba(0, 0, 0, 0.6);
+            color: #888;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .gallery-thumb .thumb-star.active {
+            color: var(--gold);
+        }
+
+        .gallery-thumb .thumb-remove {
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .gallery-thumb .thumb-remove:hover {
+            background: var(--danger);
+        }
+
+        .gallery-add {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 2px dashed var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            gap: 4px;
+        }
+
+        .gallery-add:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .gallery-add i {
+            font-size: 1.2rem;
+        }
+
+        .gallery-add span {
+            font-size: 0.7rem;
+        }
+
         /* ====== VARIANTS TABLE ====== */
         .variants-section {
             margin-top: 4px;
@@ -918,25 +1030,29 @@
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="f-active">
-                                <option value="true">Ativo</option>
-                                <option value="false">Inativo</option>
-                            </select>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="f-active">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+
+                    <!-- GALERIA DE IMAGENS -->
+                    <div class="form-group gallery-section">
+                        <div class="section-header">
+                            <h4><i class="fas fa-images"></i> Imagens do Produto</h4>
                         </div>
-                        <div class="form-group">
-                            <label>Imagem do Produto</label>
-                            <div class="upload-area" id="upload-area"
-                                onclick="document.getElementById('image-file').click()">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <p>Clique para selecionar imagem</p>
-                                <small>JPG, PNG, WebP (máx 5MB)</small>
+                        <div class="gallery-grid" id="gallery-grid">
+                            <div class="gallery-add" onclick="document.getElementById('image-file').click()">
+                                <i class="fas fa-plus"></i>
+                                <span>Adicionar</span>
                             </div>
-                            <input type="file" id="image-file" accept="image/*" onchange="handleImageUpload(this)">
-                            <input type="hidden" id="f-image">
                         </div>
+                        <input type="file" id="image-file" accept="image/*" multiple
+                            onchange="handleMultiImageUpload(this)" style="display:none">
+                        <small style="color:var(--text-secondary)">⭐ Clique na estrela para definir a foto principal.
+                            Máx 5MB por imagem.</small>
                     </div>
 
                     <!-- VARIANTES: COR / TAMANHO / QUANTIDADE -->
@@ -1000,6 +1116,7 @@
         let categories = [];
         let editingId = null;
         let deletingId = null;
+        let currentGallery = []; // Array de strings (URLs)
 
         // ====== INITIALIZE ======
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1116,8 +1233,8 @@
             editingId = null;
             document.getElementById('modal-title').textContent = 'Novo Produto';
             document.getElementById('product-form').reset();
-            document.getElementById('f-image').value = '';
-            resetUploadArea();
+            currentGallery = [];
+            renderGallery();
             loadVariants([]);
             document.getElementById('product-modal').classList.add('active');
         }
@@ -1133,26 +1250,19 @@
             document.getElementById('f-price').value = p.price;
             document.getElementById('f-old-price').value = p.oldPrice || '';
             document.getElementById('f-active').value = String(p.active);
-            document.getElementById('f-image').value = p.image || '';
 
-            // Carregar variantes
+            // Carregar Variantes
             loadVariants(p.variants || []);
 
-            const area = document.getElementById('upload-area');
-            if (p.image) {
-                const imgSrc = p.image.startsWith('data:') ? p.image
-                    : p.image.startsWith('http') ? p.image
-                        : `../${p.image}`;
-                area.classList.add('has-image');
-                area.innerHTML = `
-                    <img src="${imgSrc}" alt="Preview" onerror="this.src='../images/placeholder.png'">
-                    <button type="button" class="change-btn" onclick="event.stopPropagation(); document.getElementById('image-file').click()">
-                        <i class="fas fa-pen"></i> Alterar
-                    </button>
-                `;
+            // Carregar Imagens (retrocompatibilidade)
+            if (p.images && Array.isArray(p.images)) {
+                currentGallery = [...p.images];
+            } else if (p.image) {
+                currentGallery = [p.image];
             } else {
-                resetUploadArea();
+                currentGallery = [];
             }
+            renderGallery();
 
             document.getElementById('product-modal').classList.add('active');
         }
@@ -1162,61 +1272,85 @@
             editingId = null;
         }
 
-        function resetUploadArea() {
-            const area = document.getElementById('upload-area');
-            area.classList.remove('has-image');
-            area.innerHTML = `
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>Clique para selecionar uma imagem</p>
-                <small>JPG, PNG ou WebP (máx 5MB)</small>
+        // ====== GALLERY & UPLOAD ======
+        function renderGallery() {
+            const grid = document.getElementById('gallery-grid');
+            // Manter apenas o botão de adicionar
+            grid.innerHTML = `
+                <div class="gallery-add" onclick="document.getElementById('image-file').click()">
+                    <i class="fas fa-plus"></i>
+                    <span>Adicionar</span>
+                </div>
             `;
+
+            currentGallery.forEach((img, index) => {
+                const imgSrc = img.startsWith('data:') || img.startsWith('http') ? img : `../${img}`;
+                const div = document.createElement('div');
+                div.className = `gallery-thumb ${index === 0 ? 'primary' : ''}`;
+                div.innerHTML = `
+                    <img src="${imgSrc}" onerror="this.src='../images/placeholder.png'">
+                    <div class="thumb-actions">
+                        <button type="button" class="thumb-star ${index === 0 ? 'active' : ''}" onclick="setMainImage(${index})" title="Definir como principal">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button type="button" class="thumb-remove" onclick="removeImage(${index})" title="Remover">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                grid.insertBefore(div, grid.firstChild); // Adicionar antes do botão '+'
+            });
         }
 
-        // ====== IMAGE UPLOAD ======
-        async function handleImageUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
+        async function handleMultiImageUpload(input) {
+            const files = Array.from(input.files);
+            if (!files.length) return;
 
-            const area = document.getElementById('upload-area');
-            area.innerHTML = `<div class="loading"><i class="fas fa-spinner"></i> Enviando...</div>`;
-
-            const formData = new FormData();
-            formData.append('image', file);
+            const addBtn = document.querySelector('.gallery-add');
+            const originalContent = addBtn.innerHTML;
+            addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            addBtn.style.pointerEvents = 'none';
 
             try {
                 const token = localStorage.getItem('adminToken');
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
 
-                const data = await response.json();
+                for (const file of files) {
+                    const formData = new FormData();
+                    formData.append('image', file);
 
-                if (!response.ok) {
-                    throw new Error(data.error || data.details || 'Erro no upload');
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'Erro no upload');
+
+                    currentGallery.push(data.path);
                 }
 
-                document.getElementById('f-image').value = data.path;
-
-                // Mostrar preview
-                area.classList.add('has-image');
-                const imgSrc = data.path.startsWith('data:') ? data.path
-                    : data.path.startsWith('http') ? data.path
-                        : `../${data.path}`;
-                area.innerHTML = `
-                    <img src="${imgSrc}" alt="Preview">
-                    <button type="button" class="change-btn" onclick="event.stopPropagation(); document.getElementById('image-file').click()">
-                        <i class="fas fa-pen"></i> Alterar
-                    </button>
-                `;
-                showToast('Imagem carregada!');
+                showToast(`${files.length} imagens carregadas!`);
+                renderGallery();
             } catch (err) {
-                resetUploadArea();
-                showToast('Erro no upload: ' + err.message, 'error');
+                showToast('Erro: ' + err.message, 'error');
+            } finally {
+                addBtn.innerHTML = originalContent;
+                addBtn.style.pointerEvents = 'auto';
+                input.value = '';
             }
+        }
 
-            input.value = '';
+        function removeImage(index) {
+            currentGallery.splice(index, 1);
+            renderGallery();
+        }
+
+        function setMainImage(index) {
+            if (index === 0) return;
+            const img = currentGallery.splice(index, 1)[0];
+            currentGallery.unshift(img);
+            renderGallery();
         }
 
         // ====== VARIANTS MANAGEMENT ======
@@ -1308,8 +1442,9 @@
                 oldPrice: parseFloat(document.getElementById('f-old-price').value) || null,
                 stock: totalStock,
                 variants: variants,
+                images: currentGallery, // Array de imagens
+                image: currentGallery.length > 0 ? currentGallery[0] : 'images/placeholder.png', // Main image (legacy support)
                 active: document.getElementById('f-active').value === 'true',
-                image: document.getElementById('f-image').value || 'images/placeholder.png',
                 rating: 5,
                 reviews: 0
             };
