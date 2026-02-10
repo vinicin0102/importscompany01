@@ -1,6 +1,6 @@
 {
   "name": "imports-company-admin",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Painel Administrativo - Imports Company",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,6 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.95.3",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",

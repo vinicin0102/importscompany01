@@ -1,28 +1,27 @@
 /**
- * Admin Panel Utility Functions
+ * Admin Panel - Utility Functions v2
+ * Imports Company
  */
 
 const API_URL = window.location.origin;
 
-// Check authentication
+// ====== AUTH ======
 function checkAuth() {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-        // Redireciona para login absoluto
         window.location.href = '/admin/login.html';
         return false;
     }
     return true;
 }
 
-// Logout
 function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     window.location.href = '/admin/login.html';
 }
 
-// API Request helper
+// ====== API REQUEST ======
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const token = localStorage.getItem('adminToken');
 
@@ -39,21 +38,24 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     }
 
     const response = await fetch(`${API_URL}${endpoint}`, options);
+
+    if (response.status === 401) {
+        logout();
+        throw new Error('Sessão expirada. Faça login novamente.');
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
-        if (response.status === 401) {
-            logout();
-        }
-        throw new Error(data.error || 'Erro na requisição');
+        throw new Error(data.error || `Erro ${response.status}`);
     }
 
     return data;
 }
 
-// Toast notification
+// ====== TOAST NOTIFICATION ======
 function showToast(message, type = 'success') {
-    // Remove existing toasts
+    // Remove toasts existentes
     document.querySelectorAll('.toast').forEach(t => t.remove());
 
     const toast = document.createElement('div');
@@ -66,16 +68,20 @@ function showToast(message, type = 'success') {
     document.body.appendChild(toast);
 
     // Trigger animation
-    setTimeout(() => toast.classList.add('show'), 10);
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+    });
 
-    // Remove after 3s
+    // Auto-remove
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
 
-// Format currency
+// ====== FORMATTERS ======
 function formatCurrency(value) {
-    return `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
+    return `R$ ${parseFloat(value || 0).toFixed(2).replace('.', ',')}`;
 }
