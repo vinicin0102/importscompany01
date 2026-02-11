@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS banners (
     "buttonText" TEXT,
     "buttonLink" TEXT,
     image TEXT NOT NULL,
+    image_mobile TEXT,
     link TEXT,
     "containMode" BOOLEAN DEFAULT FALSE,
     "position" TEXT, -- 'home_main', 'home_secondary'

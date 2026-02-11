@@ -170,8 +170,18 @@ async function initBannerCarousel() {
         activeBanners.forEach((banner, index) => {
             // Slide
             const slide = document.createElement('div');
-            slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
-            const bgImage = banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : banner.image;
+            const isMobile = window.innerWidth <= 768;
+            let bgImage = banner.image;
+
+            // Usa imagem mobile se existir e estiver no mobile
+            if (isMobile && banner.image_mobile) {
+                bgImage = banner.image_mobile;
+            }
+
+            if (bgImage && !bgImage.startsWith('http') && !bgImage.startsWith('/')) {
+                bgImage = bgImage; // Caminho relativo
+            }
+
             slide.style.backgroundImage = `url('${bgImage}')`;
             slide.style.backgroundPosition = 'center center';
             slide.style.backgroundSize = 'cover'; // Default
@@ -180,7 +190,7 @@ async function initBannerCarousel() {
             if (banner.containMode) {
                 slide.style.backgroundSize = 'contain';
                 slide.style.backgroundRepeat = 'no-repeat';
-                slide.style.backgroundColor = '#000'; // Fundo preto para preencher sobras
+                slide.style.backgroundColor = '#000';
             }
 
             // Content logic - Só renderiza se houver pelo menos um texto ou botão

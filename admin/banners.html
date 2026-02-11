@@ -119,31 +119,36 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Imagem do Banner</label>
-
-                    <div style="margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
-                        <label
-                            style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;">Link
-                            da Imagem (URL)</label>
-                        <input type="text" id="banner-image-url"
-                            placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)"
-                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        <p style="font-size: 0.75rem; color: #888; margin-top: 4px;">Recomendado para evitar que a
-                            imagem suma.</p>
-                    </div>
-
-                    <div style="margin-bottom: 5px;">
-                        <label style="font-size: 0.85rem; color: #666;">Ou envie um arquivo (Temporário):</label>
-                    </div>
-                    <div class="image-upload banner-upload">
-                        <input type="file" id="banner-image-file" accept="image/*">
-                        <div class="image-preview" id="image-preview">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <span>Clique ou arraste uma imagem</span>
+                <div class="form-row two-cols">
+                    <div class="form-group">
+                        <label>Imagem do Banner (Desktop - 16:9)</label>
+                        <div class="image-upload banner-upload"
+                            onclick="document.getElementById('banner-image-file').click()">
+                            <input type="file" id="banner-image-file" accept="image/*" style="display:none">
+                            <div class="image-preview" id="image-preview">
+                                <i class="fas fa-desktop"></i>
+                                <span>Imagem para Computador</span>
+                            </div>
                         </div>
+                        <input type="hidden" id="banner-image">
+                        <input type="text" id="banner-image-url" placeholder="Ou cole o link da imagem (URL)"
+                            style="width: 100%; margin-top: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
                     </div>
-                    <input type="hidden" id="banner-image">
+
+                    <div class="form-group">
+                        <label>Imagem do Banner (Celular - 9:16)</label>
+                        <div class="image-upload banner-upload" style="aspect-ratio: 9/16; max-height: 250px;"
+                            onclick="document.getElementById('banner-image-mobile-file').click()">
+                            <input type="file" id="banner-image-mobile-file" accept="image/*" style="display:none">
+                            <div class="image-preview" id="image-mobile-preview">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Imagem para Celular</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="banner-image-mobile">
+                        <input type="text" id="banner-image-mobile-url" placeholder="Ou cole o link da imagem (URL)"
+                            style="width: 100%; margin-top: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
+                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -170,14 +175,24 @@
             document.getElementById('modal-close').addEventListener('click', closeModal);
             document.getElementById('btn-cancel').addEventListener('click', closeModal);
             document.getElementById('banner-form').addEventListener('submit', saveBanner);
-            document.getElementById('banner-image-file').addEventListener('change', handleImageUpload);
+            document.getElementById('banner-image-file').addEventListener('change', (e) => handleImageUpload(e, 'desktop'));
+            document.getElementById('banner-image-mobile-file').addEventListener('change', (e) => handleImageUpload(e, 'mobile'));
 
-            // Listener para input de URL
+            // Listener para input de URL Desktop
             document.getElementById('banner-image-url').addEventListener('input', function (e) {
                 const url = e.target.value;
                 if (url) {
                     document.getElementById('banner-image').value = url;
                     document.getElementById('image-preview').innerHTML = `<img src="${url}" alt="Preview" style="object-fit: contain;">`;
+                }
+            });
+
+            // Listener para input de URL Mobile
+            document.getElementById('banner-image-mobile-url').addEventListener('input', function (e) {
+                const url = e.target.value;
+                if (url) {
+                    document.getElementById('banner-image-mobile').value = url;
+                    document.getElementById('image-mobile-preview').innerHTML = `<img src="${url}" alt="Preview" style="object-fit: contain;">`;
                 }
             });
 
@@ -228,8 +243,12 @@
             document.getElementById('modal-title').textContent = 'Novo Banner';
             document.getElementById('banner-form').reset();
             document.getElementById('image-preview').innerHTML = `
-                <i class="fas fa-cloud-upload-alt"></i>
-                <span>Clique ou arraste uma imagem</span>
+                <i class="fas fa-desktop"></i>
+                <span>Imagem para Computador</span>
+            `;
+            document.getElementById('image-mobile-preview').innerHTML = `
+                <i class="fas fa-mobile-alt"></i>
+                <span>Imagem para Celular</span>
             `;
             document.getElementById('banner-modal').classList.add('active');
         }
@@ -253,25 +272,27 @@
             document.getElementById('banner-contain').value = banner.containMode.toString();
             document.getElementById('banner-active').value = banner.active.toString();
 
-            const imgPath = banner.image || '';
-            document.getElementById('banner-image').value = imgPath;
+            const imgDesktop = banner.image || '';
+            const imgMobile = banner.image_mobile || '';
 
-            // Popula o campo URL se for http
-            if (imgPath.startsWith('http')) {
-                document.getElementById('banner-image-url').value = imgPath;
+            document.getElementById('banner-image').value = imgDesktop;
+            document.getElementById('banner-image-mobile').value = imgMobile;
+
+            document.getElementById('banner-image-url').value = imgDesktop.startsWith('http') ? imgDesktop : '';
+            document.getElementById('banner-image-mobile-url').value = imgMobile.startsWith('http') ? imgMobile : '';
+
+            if (imgDesktop) {
+                let displayUrl = imgDesktop.startsWith('http') || imgDesktop.startsWith('/') ? imgDesktop : '../' + imgDesktop;
+                document.getElementById('image-preview').innerHTML = `<img src="${displayUrl}" alt="Preview" style="object-fit: contain;">`;
             } else {
-                document.getElementById('banner-image-url').value = '';
+                document.getElementById('image-preview').innerHTML = `<i class="fas fa-desktop"></i><span>Imagem Desktop</span>`;
             }
 
-            if (imgPath) {
-                let displayUrl = imgPath;
-                if (!displayUrl.startsWith('http') && !displayUrl.startsWith('/')) {
-                    displayUrl = '../' + displayUrl;
-                }
-
-                document.getElementById('image-preview').innerHTML = `
-                    <img src="${displayUrl}" alt="Preview" style="object-fit: contain;">
-                `;
+            if (imgMobile) {
+                let displayUrl = imgMobile.startsWith('http') || imgMobile.startsWith('/') ? imgMobile : '../' + imgMobile;
+                document.getElementById('image-mobile-preview').innerHTML = `<img src="${displayUrl}" alt="Preview" style="object-fit: contain;">`;
+            } else {
+                document.getElementById('image-mobile-preview').innerHTML = `<i class="fas fa-mobile-alt"></i><span>Imagem Mobile</span>`;
             }
 
             document.getElementById('banner-modal').classList.add('active');
@@ -288,7 +309,8 @@
                 buttonLink: document.getElementById('banner-button-link').value,
                 containMode: document.getElementById('banner-contain').value === 'true',
                 active: document.getElementById('banner-active').value === 'true',
-                image: document.getElementById('banner-image').value
+                image: document.getElementById('banner-image').value,
+                image_mobile: document.getElementById('banner-image-mobile').value
             };
 
             try {
@@ -318,12 +340,16 @@
             }
         }
 
-        async function handleImageUpload(e) {
+        async function handleImageUpload(e, type) {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Abre o recorte antes de subir
-            openCropper(file, 16 / 9, async (croppedFile) => {
+            const ratio = type === 'desktop' ? (16 / 9) : (9 / 16);
+            const previewId = type === 'desktop' ? 'image-preview' : 'image-mobile-preview';
+            const hiddenId = type === 'desktop' ? 'banner-image' : 'banner-image-mobile';
+            const urlId = type === 'desktop' ? 'banner-image-url' : 'banner-image-mobile-url';
+
+            openCropper(file, ratio, async (croppedFile) => {
                 const formData = new FormData();
                 formData.append('image', croppedFile);
 
@@ -336,11 +362,11 @@
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error);
 
-                    document.getElementById('banner-image').value = data.path;
-                    document.getElementById('banner-image-url').value = ''; // Limpa URL se fez upload
+                    document.getElementById(hiddenId).value = data.path;
+                    document.getElementById(urlId).value = '';
 
-                    document.getElementById('image-preview').innerHTML = `<img src="${data.path}" alt="Preview">`;
-                    showToast('Imagem recortada e enviada!');
+                    document.getElementById(previewId).innerHTML = `<img src="${data.path}" alt="Preview">`;
+                    showToast(`Imagem ${type} recortada e enviada!`);
                 } catch (error) {
                     showToast('Erro: ' + error.message, 'error');
                 }
