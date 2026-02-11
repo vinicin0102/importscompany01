@@ -21,11 +21,22 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
     console.error('❌ ERRO CRÍTICO: Supabase URL ou Key não definidos no .env');
-    // Em produção, deve falhar. Em dev, avisa.
-    if (process.env.NODE_ENV === 'production') process.exit(1);
+    // Em vez de crashar o processo na Vercel (o que gera 500 HTML genérico),
+    // vamos definir o supabase como null e retornar erro na API se tentar usar.
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+// Middleware para checar Supabase antes de rotas que precisam dele
+const requireSupabase = (req, res, next) => {
+    if (!supabase) {
+        return res.status(500).json({
+            error: 'Erro de Configuração no Servidor',
+            details: 'Variáveis de ambiente do Supabase não configuradas (SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY).'
+        });
+    }
+    next();
+};
 
 // Middleware
 app.use(cors());
@@ -36,6 +47,20 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '..')));
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
 app.use('/images', express.static(path.join(__dirname, '..', 'images')));
+
+// Global Check for Supabase on API routes
+app.use('/api', (req, res, next) => {
+    // Se for rota de debug, permite passar
+    if (req.path === '/debug') return next();
+
+    if (!supabase) {
+        return res.status(500).json({
+            error: 'Erro de Configuração no Servidor (Supabase)',
+            details: 'Variáveis de ambiente SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não configuradas.'
+        });
+    }
+    next();
+});
 
 // Multer Storage (Memória para upload direto ao Supabase)
 const storage = multer.memoryStorage();
