@@ -152,7 +152,7 @@ async function initBannerCarousel() {
             // Slide
             const slide = document.createElement('div');
             slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
-            const bgImage = banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `../${banner.image}`;
+            const bgImage = banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : banner.image;
             slide.style.backgroundImage = `url('${bgImage}')`;
 
             // Content (Title/Subtitle logic)
