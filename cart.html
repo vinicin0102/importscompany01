@@ -213,8 +213,29 @@
         }
 
         function checkoutFinal() {
-            alert('Redirecionando para o Pagamento Seguro...');
-            // window.location.href = '/checkout-gateway';
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) return alert('Seu carrinho está vazio!');
+
+            // Filtra produtos que possuem Token da Yampi
+            const yampiItems = cart.filter(item => item.yampi_token).map(item => {
+                const qty = item.quantity || 1;
+                return `${item.yampi_token}:${qty}`;
+            });
+
+            if (yampiItems.length > 0) {
+                // Monta o link da Yampi: https://checkout.yampi.com.br/r/TOKEN:QTD,TOKEN:QTD
+                const yampiLink = `https://checkout.yampi.com.br/r/${yampiItems.join(',')}`;
+
+                alert('Redirecionando para o Pagamento Seguro da Yampi...');
+                window.location.href = yampiLink;
+            } else {
+                // Fallback caso não tenha tokens cadastrados
+                alert('Estamos finalizando sua compra via WhatsApp...');
+                const productNames = cart.map(item => `- ${item.title} (${item.size})`).join('%0A');
+                const totalText = document.getElementById('total').innerText;
+                const text = `Olá! Gostaria de finalizar o pedido desses produtos:%0A${productNames}%0ATotal: ${totalText}`;
+                window.location.href = `https://wa.me/5511999999999?text=${text}`;
+            }
         }
     </script>
 </body>
