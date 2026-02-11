@@ -1,6 +1,6 @@
 /**
- * IMPORTS COMPANY - Admin Server v4.0 (SUPABASE EDITION)
- * PERSISTÊNCIA REAL via Supabase Database & Storage
+ * IMPORTS COMPANY - Admin Server v5.0 (SUPABASE EDITION)
+ * Backend completo com rotas de API para Admin Panel
  */
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -8,6 +8,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -16,72 +17,398 @@ const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
 // Supabase Client
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use Service Role for backend operations
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
     console.error('❌ ERRO CRÍTICO: Supabase URL ou Key não definidos no .env');
-    process.exit(1);
+    // Em produção, deve falhar. Em dev, avisa.
+    if (process.env.NODE_ENV === 'production') process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, '..')));
-app.use('/images', express.static(path.join(__dirname, '..', 'images')));
-app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Upload - Memory Storage (buffer for Supabase upload)
+// Servir arquivos estáticos (Frontend)
+app.use(express.static(path.join(__dirname, '..')));
+app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
+app.use('/images', express.static(path.join(__dirname, '..', 'images')));
+
+// Multer Storage (Memória para upload direto ao Supabase)
 const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB Limit
+const upload = multer({
+    storage,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB Limit
+});
 
 // Auth Middleware
 const authMiddleware = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Token não fornecido' });
+
     try {
-        req.user = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
         next();
     } catch (err) {
         return res.status(401).json({ error: 'Token inválido ou expirado' });
     }
 };
 
-// ... (existing routes) ...
+// =============================================
+// AUTH ROUTES
+// =============================================
+
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // 1. Tentar buscar no Supabase (tabela 'users')
+        let user = null;
+        const { data: usersData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .single();
+
+        if (!error && usersData) {
+            user = usersData;
+        }
+
+        // 2. Fallback: Admin Hardcoded (se banco falhar ou usuário não existir lá)
+        if (!user && username === 'admin') {
+            // Hash para 'admin123'
+            const fallbackHash = '$2a$10$5ffw/5m6tQa7ViJNXa4CMOEvtxy/rqb170oW8z3fxPfs9p9nArn.a';
+            user = {
+                id: 1,
+                username: 'admin',
+                password: fallbackHash, // admin123
+                name: 'Administrador Principal',
+                role: 'admin'
+            };
+        }
+
+        if (!user) {
+            return res.status(401).json({ error: 'Usuário não encontrado' });
+        }
+
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Senha incorreta' });
+        }
+
+        const token = jwt.sign(
+            { id: user.id, username: user.username, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            token,
+            user: { id: user.id, username: user.username, name: user.name, role: user.role }
+        });
+
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Erro interno no login' });
+    }
+});
 
 // =============================================
-// GLOBAL ERROR HANDLER
+// UPLOAD ROUTE (SUPABASE STORAGE)
 // =============================================
+
+app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'Nenhuma imagem enviada' });
+    }
+
+    try {
+        const fileExt = path.extname(req.file.originalname);
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${fileExt}`;
+        const filePath = `${fileName}`; // Raiz do bucket ou pasta específica
+
+        const { data, error } = await supabase.storage
+            .from('images')
+            .upload(filePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: false
+            });
+
+        if (error) throw error;
+
+        // Gerar URL Pública
+        const { data: { publicUrl } } = supabase.storage
+            .from('images')
+            .getPublicUrl(filePath);
+
+        res.json({
+            filename: fileName,
+            path: publicUrl
+        });
+
+    } catch (err) {
+        console.error('Upload Error:', err);
+        res.status(500).json({ error: 'Erro ao fazer upload da imagem: ' + err.message });
+    }
+});
+
+// =============================================
+// PRODUCTS ROUTES
+// =============================================
+
+app.get('/api/products', async (req, res) => {
+    const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('id', { ascending: true });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
+app.get('/api/products/:id', async (req, res) => {
+    const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', req.params.id)
+        .single();
+
+    if (error) return res.status(404).json({ error: 'Produto não encontrado' });
+    res.json(data);
+});
+
+app.post('/api/products', authMiddleware, async (req, res) => {
+    const { id, ...productData } = req.body; // Remove ID to let DB generate it if needed
+
+    // Se quiser manter ID manual, mantenha o id. Mas geralmente é Serial.
+    // O adapter antigo usava logica de array.length + 1. Aqui deixamos o banco decidir ou usamos a lógica se o client mandar.
+    // Vamos remover o ID para segurança, a menos que seja explicitamente enviado e o banco aceite.
+
+    const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data);
+});
+
+app.put('/api/products/:id', authMiddleware, async (req, res) => {
+    const { data, error } = await supabase
+        .from('products')
+        .update(req.body)
+        .eq('id', req.params.id)
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+app.delete('/api/products/:id', authMiddleware, async (req, res) => {
+    const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', req.params.id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Produto removido com sucesso' });
+});
+
+// =============================================
+// CATEGORIES ROUTES
+// =============================================
+
+app.get('/api/categories', async (req, res) => {
+    const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('order', { ascending: true }); // Ordenar por 'order' se existir
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
+app.post('/api/categories', authMiddleware, async (req, res) => {
+    const { data, error } = await supabase
+        .from('categories')
+        .insert([req.body])
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data);
+});
+
+app.put('/api/categories/:id', authMiddleware, async (req, res) => {
+    const { data, error } = await supabase
+        .from('categories')
+        .update(req.body)
+        .eq('id', req.params.id)
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
+    const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', req.params.id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Categoria removida' });
+});
+
+// =============================================
+// BANNERS ROUTES
+// =============================================
+
+app.get('/api/banners', async (req, res) => {
+    const { data, error } = await supabase
+        .from('banners')
+        .select('*')
+        .order('order', { ascending: true }); // Ordenar
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
+app.post('/api/banners', authMiddleware, async (req, res) => {
+    const { data, error } = await supabase
+        .from('banners')
+        .insert([req.body])
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data);
+});
+
+app.put('/api/banners/:id', authMiddleware, async (req, res) => {
+    const { data, error } = await supabase
+        .from('banners')
+        .update(req.body)
+        .eq('id', req.params.id)
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+app.delete('/api/banners/:id', authMiddleware, async (req, res) => {
+    const { error } = await supabase
+        .from('banners')
+        .delete()
+        .eq('id', req.params.id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Banner removido' });
+});
+
+// =============================================
+// SETTINGS ROUTES
+// =============================================
+
+app.get('/api/settings', async (req, res) => {
+    // Busca a configuração. Assumindo que temos uma tabela 'settings' com id=1 ou similar
+    // Ou uma tabela com chave-valor. O adapter indicava 'settings' -> JSON.
+    // Vamos tentar pegar a primeira linha.
+    const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+    if (error) {
+        // Se tabela vazia, retorna default
+        return res.json({});
+    }
+    // Se settings for um campo JSONB, retorna ele.
+    // O adapter retornava 'config'. Vamos assumir que 'data' é o objeto settings ou tem um campo 'config'.
+    // Mas para simplificar, vamos retornar o que vier.
+    res.json(data.config || data);
+});
+
+app.put('/api/settings', authMiddleware, async (req, res) => {
+    // Upsert na tabela settings
+    // Assume id=1
+    const { data, error } = await supabase
+        .from('settings')
+        .upsert({ id: 1, config: req.body }) // Ajuste conforme esquema real
+        .select();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(req.body);
+});
+
+// =============================================
+// DASHBOARD STATS
+// =============================================
+
+app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
+    try {
+        const { count: totalProducts } = await supabase.from('products').select('*', { count: 'exact', head: true });
+        const { count: activeProducts } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('active', true);
+        const { count: totalCategories } = await supabase.from('categories').select('*', { count: 'exact', head: true });
+        const { count: totalBanners } = await supabase.from('banners').select('*', { count: 'exact', head: true });
+
+        // Stock precisa somar. Supabase não tem SUM() fácil na API JS sem RPC.
+        // Vamos buscar só a coluna stock de todos produtos (pode ser pesado se muitos produtos, mas ok p/ agora)
+        const { data: stockData } = await supabase.from('products').select('stock');
+        const totalStock = stockData ? stockData.reduce((sum, p) => sum + (p.stock || 0), 0) : 0;
+
+        const { count: lowStock } = await supabase.from('products').select('*', { count: 'exact', head: true }).lt('stock', 5);
+
+        // Recent products
+        const { data: recentProducts } = await supabase
+            .from('products')
+            .select('*')
+            .order('created_at', { ascending: false }) // Use created_at ou id
+            .limit(5);
+
+        res.json({
+            totalProducts: totalProducts || 0,
+            activeProducts: activeProducts || 0,
+            totalCategories: totalCategories || 0,
+            totalBanners: totalBanners || 0,
+            totalStock,
+            lowStockProducts: lowStock || 0,
+            recentProducts: recentProducts || []
+        });
+    } catch (err) {
+        console.error('Stats Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Global Error Handler
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
-        // Multer-specific errors
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({ error: 'Arquivo muito grande. Limite máximo de 50MB.' });
         }
         return res.status(400).json({ error: `Erro no upload: ${err.message}` });
     }
-
     if (err) {
         console.error('Erro desconhecido:', err);
         return res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
     }
-
     next();
 });
 
-app.get('/api/debug', async (req, res) => {
-    res.json({
-        status: 'OK',
-        mode: 'SUPABASE_ONLY',
-        timestamp: new Date().toISOString()
-    });
-});
-
-module.exports = app;
-
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`🚀 Server v4.0 (Supabase) rodando em http://localhost:${PORT}`);
+        console.log(`🚀 Server v5.0 (Supabase) rodando em http://localhost:${PORT}`);
     });
 }
+
+module.exports = app;
