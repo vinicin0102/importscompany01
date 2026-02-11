@@ -112,7 +112,8 @@ function reattachEvents(card, data) {
         price: parseFloat(data.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
         oldPrice: data.oldPrice ? parseFloat(data.oldPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
         installment: `ou 12x de R$ ${(data.price / 12).toFixed(2).replace('.', ',')}`,
-        category: data.category || 'Oferta'
+        category: data.category || 'Oferta',
+        variants: data.variants || []
     };
 
     const openModalHandler = (e) => {

@@ -42,6 +42,8 @@ async function migrate() {
             price: p.price,
             "oldPrice": p.oldPrice,
             image: p.image,
+            images: p.images || [],
+            variants: p.variants || [],
             stock: p.stock,
             badge: p.badge,
             rating: p.rating,

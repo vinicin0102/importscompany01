@@ -1254,8 +1254,8 @@
             // Carregar Variantes
             loadVariants(p.variants || []);
 
-            // Carregar Imagens (retrocompatibilidade)
-            if (p.images && Array.isArray(p.images)) {
+            // Carregar Imagens
+            if (p.images && Array.isArray(p.images) && p.images.length > 0) {
                 currentGallery = [...p.images];
             } else if (p.image) {
                 currentGallery = [p.image];

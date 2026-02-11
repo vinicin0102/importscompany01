@@ -4,6 +4,7 @@
 -- =========================================================
 
 -- 1. LIMPEZA (Apaga tabelas antigas para evitar conflitos)
+DROP TABLE IF EXISTS product_images CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS banners CASCADE;
@@ -12,17 +13,23 @@ DROP TABLE IF EXISTS users CASCADE;
 
 -- STORAGE (Upload de Imagens)
 -- Tenta criar o bucket 'images' (se a extensão storage estiver ativa)
-BEGIN;
+DO $$
+BEGIN
   INSERT INTO storage.buckets (id, name, public) 
   VALUES ('images', 'images', true)
   ON CONFLICT (id) DO NOTHING;
-
-  -- Remove policies antigas para recriar
-  DROP POLICY IF EXISTS "Public Access" ON storage.objects;
   
-  -- Cria policy para leitura pública
+  -- Remove policies antigas para recriar (Evita erro de policy duplicada)
+  DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+  DROP POLICY IF EXISTS "Public Insert" ON storage.objects;
+  
+  -- Cria policy para leitura pública (ESSENCIAL PARA AS IMAGENS APARECEREM NO SITE)
   CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'images' );
-COMMIT;
+  
+  -- Cria policy para upload (autenticado ou anonimo dependendo da necessidade, aqui deixamos publico para testar, ou restrito)
+  -- Para simplificar e garantir que funcione:
+  CREATE POLICY "Public Insert" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'images' );
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- 2. CRIAÇÃO DAS TABELAS (Schema correto)
 
@@ -43,15 +50,25 @@ CREATE TABLE products (
     category TEXT,
     price NUMERIC(10, 2) NOT NULL,
     "oldPrice" NUMERIC(10, 2),
-    image TEXT,
+    image TEXT, -- Imagem principal (cache/atalho)
     stock INTEGER DEFAULT 0,
     badge TEXT,
     rating NUMERIC(3, 1) DEFAULT 0,
     reviews INTEGER DEFAULT 0,
     active BOOLEAN DEFAULT TRUE,
     description TEXT,
+    variants JSONB DEFAULT '[]', -- Variants ainda em JSON pois é estrutura complexa
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabela Separada de Imagens (Solicitado pelo usuário)
+CREATE TABLE product_images (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    is_main BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Banners
@@ -84,18 +101,22 @@ CREATE TABLE users (
 
 -- Policies (Segurança Básica)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE banners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public Read Access Products" ON products FOR SELECT USING (true);
+CREATE POLICY "Public Read Access Product Images" ON product_images FOR SELECT USING (true);
 CREATE POLICY "Public Read Access Categories" ON categories FOR SELECT USING (true);
 CREATE POLICY "Public Read Access Banners" ON banners FOR SELECT USING (true);
 CREATE POLICY "Public Read Access Settings" ON settings FOR SELECT USING (true);
 
 -- Permissão total para service role (API)
+-- O backend usa service role, que bupassa RLS, mas se usar cliente anon:
 CREATE POLICY "Admin All Access Products" ON products USING (true) WITH CHECK (true);
+CREATE POLICY "Admin All Access Product Images" ON product_images USING (true) WITH CHECK (true);
 CREATE POLICY "Admin All Access Categories" ON categories USING (true) WITH CHECK (true);
 CREATE POLICY "Admin All Access Banners" ON banners USING (true) WITH CHECK (true);
 CREATE POLICY "Admin All Access Settings" ON settings USING (true) WITH CHECK (true);
@@ -114,31 +135,19 @@ INSERT INTO categories (id, name, icon, link, "order") VALUES ('watches', 'Reló
 INSERT INTO categories (id, name, icon, link, "order") VALUES ('bodysplash', 'Body Splash', 'fa-spray-can-sparkles', NULL, 7) ON CONFLICT DO NOTHING;
 INSERT INTO categories (id, name, icon, link, "order") VALUES ('vitamins', 'Vitaminas', 'fa-pills', NULL, 8) ON CONFLICT DO NOTHING;
 
--- Produtos
+-- Produtos Exemplo
 INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (1, 'Camisa Tommy Hilfiger Listrada', 'mens-fashion', 389.9, 499.9, 'images/banner_raw_2.jpg', 15, 'hot', 5, 42, TRUE) ON CONFLICT DO NOTHING;
 INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (2, 'Malha Tommy Hilfiger Cinza', 'mens-fashion', 549.9, 699.9, 'images/banner_raw_1.jpg', 8, 'new', 4.5, 28, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (3, 'T-Shirt Tommy Hilfiger Signature', 'womens-fashion', 289.9, 349.9, 'images/banner_female.jpg', 22, 'discount', 5, 156, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (4, 'Polo Ralph Lauren Iconic', 'mens-fashion', 449.9, 599.9, 'images/1770589606276_camisa_1.png', 10, 'exclusive', 5, 0, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (5, 'Bolsa Michael Kors Couro Black', 'bags', 1499, 1899, 'images/banner_bag_black.jpg', 5, 'hot', 5, 34, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (6, 'Bolsa Michael Kors Crossbody', 'bags', 1299, 1599, 'images/banner_bag_brown.jpg', 7, 'new', 4.5, 12, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (7, 'Camisa Floral Primavera', 'womens-fashion', 299, 389, 'images/banner_raw_4.jpg', 18, 'exclusive', 5, 67, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (8, 'Camisa Social Ralph Lauren', 'womens-fashion', 399, 499, 'images/camisa_ralph_lauren.jpeg', 12, 'hot', 4.5, 98, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (9, 'Camiseta Armani Exchange A|X', 'mens-fashion', 349.9, 449.9, 'images/placeholder.png', 20, 'new', 5, 0, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (10, 'Camiseta FIFA World Cup', 'mens-fashion', 299.9, 399.9, 'images/placeholder.png', 15, 'hot', 5, 0, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (11, 'Camiseta Nike Air', 'mens-fashion', 279.9, 349.9, 'images/placeholder.png', 25, 'new', 5, 0, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (12, 'Camiseta Tommy Hilfiger Navy', 'mens-fashion', 329.9, 429.9, 'images/camiseta_tommy_navy.jpg', 18, 'exclusive', 5, 0, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO products (id, name, category, price, "oldPrice", image, stock, badge, rating, reviews, active) VALUES (13, 'Camiseta Tommy Hilfiger Blue', 'mens-fashion', 329.9, 429.9, 'images/placeholder.png', 18, 'exclusive', 5, 0, TRUE) ON CONFLICT DO NOTHING;
 
 -- Banners
 INSERT INTO banners (id, image, title, link, "order", active) VALUES (1, 'images/hero_banner_full.png', 'Estilo Que Define', NULL, 1, TRUE) ON CONFLICT DO NOTHING;
 INSERT INTO banners (id, image, title, link, "order", active) VALUES (2, 'images/banner_female.jpg', 'Elegância & Atitude', NULL, 2, TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO banners (id, image, title, link, "order", active) VALUES (3, 'images/1770595783647_WhatsApp_Image_2026-02-05_at_15.30.35_(1).jpeg', 'Detalhes Preciosos', NULL, 3, TRUE) ON CONFLICT DO NOTHING;
 
 -- Settings
-INSERT INTO settings (id, config) VALUES (1, '{"siteName":"Imports Company","logo":"images/logo.jpg","whatsapp":"+55 31 9971-6606","email":"contato@importscompany.com.br","freeShippingThreshold":999,"colors":{"primaryNavy":"#0a1628","primaryNavyLight":"#1a2744","gold":"#c9a84c","goldLight":"#d4b86a"},"socialLinks":{"instagram":"https://instagram.com/importscompany","facebook":"","tiktok":""},"announcements":{"freeShipping":"FRETE GRÁTIS para compras acima de R$ 999","authentic":"Produtos 100% Originais","payment":"Parcelamos em até 12x"},"footer":{"about":"Sua loja de importados de luxo. Produtos autênticos das melhores marcas do mundo, entregues em todo Brasil.","address":"Belo Horizonte, MG - Brasil"}}') ON CONFLICT (id) DO UPDATE SET config = EXCLUDED.config;
+INSERT INTO settings (id, config) VALUES (1, '{"siteName":"Imports Company","logo":"images/logo.jpg","whatsapp":"+55 31 9971-6606","email":"contato@importscompany.com.br"}') ON CONFLICT (id) DO NOTHING;
 
--- 4. AJUSTE DE SEQUÊNCIAS (Para evitar erro em novos produtos)
+-- 4. AJUSTE DE SEQUÊNCIAS
 SELECT setval('products_id_seq', (SELECT MAX(id) FROM products));
+SELECT setval('product_images_id_seq', (SELECT MAX(id) FROM product_images));
 SELECT setval('banners_id_seq', (SELECT MAX(id) FROM banners));
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
-

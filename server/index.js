@@ -1,152 +1,29 @@
 /**
- * IMPORTS COMPANY - Admin Server v3.2
- * PERSISTÊNCIA REAL via GitHub API + ImgBB
- * - Dados: JSON files commitados no repo via GitHub API
- * - Imagens: upload via ImgBB (hospedagem externa gratuita)
- * - Leitura: Prioriza GitHub API para evitar dados obsoletos entre deploys
+ * IMPORTS COMPANY - Admin Server v4.0 (SUPABASE EDITION)
+ * PERSISTÊNCIA REAL via Supabase Database & Storage
  */
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
-const https = require('https');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
-// GitHub config para persistência
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
-const GITHUB_REPO = process.env.GITHUB_REPO || 'vinicin0102/Importscompany';
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+// Supabase Client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use Service Role for backend operations
 
-// ImgBB config para upload de imagens
-const IMGBB_API_KEY = process.env.IMGBB_API_KEY || '';
-
-// =============================================
-// GITHUB API - AUXILIARES
-// =============================================
-async function githubRequest(endpoint, method = 'GET', body = null) {
-    if (!GITHUB_TOKEN) throw new Error('GITHUB_TOKEN não configurado');
-
-    return new Promise((resolve, reject) => {
-        const url = new URL(`https://api.github.com${endpoint}`);
-        const options = {
-            hostname: url.hostname,
-            path: url.pathname + url.search,
-            method,
-            headers: {
-                'Authorization': `Bearer ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'User-Agent': 'ImportsCompany-Admin',
-                'Content-Type': 'application/json'
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    const parsed = JSON.parse(data);
-                    if (res.statusCode >= 400) {
-                        reject(new Error(`GitHub API ${res.statusCode}: ${parsed.message || data}`));
-                    } else {
-                        resolve(parsed);
-                    }
-                } catch (e) {
-                    resolve(data);
-                }
-            });
-        });
-
-        req.on('error', reject);
-        if (body) req.write(JSON.stringify(body));
-        req.end();
-    });
+if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ ERRO CRÍTICO: Supabase URL ou Key não definidos no .env');
+    process.exit(1);
 }
 
-async function persistToGitHub(filename, data) {
-    if (!GITHUB_TOKEN) return;
-
-    const filePath = `server/data/${filename}`;
-    const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
-
-    // Buscar SHA atual do arquivo
-    let sha = null;
-    try {
-        const file = await githubRequest(`/repos/${GITHUB_REPO}/contents/${filePath}?ref=${GITHUB_BRANCH}`);
-        sha = file.sha;
-    } catch (e) { }
-
-    // Commit o arquivo
-    const body = {
-        message: `[admin] atualizar ${filename}`,
-        content,
-        branch: GITHUB_BRANCH
-    };
-    if (sha) body.sha = sha;
-
-    await githubRequest(`/repos/${GITHUB_REPO}/contents/${filePath}`, 'PUT', body);
-    console.log(`[GITHUB] ✅ ${filename} persistido com sucesso`);
-}
-
-// =============================================
-// DATA MANAGER (Cache Memória + Sync GitHub)
-// =============================================
-let memoryStore = {};
-
-function readFromDisk(filename) {
-    try {
-        return JSON.parse(fs.readFileSync(path.join(__dirname, 'data', filename), 'utf8'));
-    } catch (e) {
-        return [];
-    }
-}
-
-// ⚠️ CORE: Garante dados frescos mesmo se o Vercel estiver com deploy antigo rodando
-async function getFreshData(key, filename) {
-    // 1. Memória quente (instância ativa)
-    if (memoryStore[key]) return memoryStore[key];
-
-    // 2. Tentar GitHub (fonte da verdade)
-    if (GITHUB_TOKEN) {
-        try {
-            console.log(`[SYNC] Buscando ${filename} do GitHub...`);
-            const file = await githubRequest(`/repos/${GITHUB_REPO}/contents/server/data/${filename}?ref=${GITHUB_BRANCH}`);
-            const content = Buffer.from(file.content, 'base64').toString('utf8');
-            const data = JSON.parse(content);
-            memoryStore[key] = data;
-            console.log(`[SYNC] ✅ ${filename} carregado do GitHub`);
-            return data;
-        } catch (e) {
-            console.log(`[SYNC] ⚠️ Falha GitHub (${e.message}). Usando disco...`);
-        }
-    }
-
-    // 3. Disco local (pode estar desatualizado no serverless)
-    const localData = readFromDisk(filename);
-    memoryStore[key] = localData;
-    return localData;
-}
-
-// Salvar (Memória -> GitHub Background -> Disco)
-async function saveData(key, data, filename) {
-    memoryStore[key] = data;
-
-    // Salvar local
-    try {
-        fs.writeFileSync(path.join(__dirname, 'data', filename), JSON.stringify(data, null, 2));
-    } catch (e) { }
-
-    // Persistir GitHub (não bloquear request)
-    persistToGitHub(filename, data).catch(err => {
-        console.error(`[GITHUB] Erro persistência: ${err.message}`);
-    });
-}
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
 app.use(cors());
@@ -155,7 +32,7 @@ app.use(express.static(path.join(__dirname, '..')));
 app.use('/images', express.static(path.join(__dirname, '..', 'images')));
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
 
-// Upload - Memory Storage
+// Upload - Memory Storage (buffer for Supabase upload)
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -176,6 +53,7 @@ const authMiddleware = (req, res, next) => {
 // =============================================
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
+    // Simple admin check (can be expanded to DB users table)
     if (username === 'admin' && password === 'admin123') {
         const token = jwt.sign(
             { id: 1, username: 'admin', role: 'admin' },
@@ -192,169 +70,296 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 });
 
 // =============================================
-// PRODUCTS ROUTES (ASYNC)
+// PRODUCTS ROUTES (Supabase)
+// =============================================
+// =============================================
+// PRODUCTS ROUTES (Supabase with product_images table + Backup JSONB)
 // =============================================
 app.get('/api/products', async (req, res) => {
-    const data = await getFreshData('products', 'products.json');
-    res.json(data);
+    try {
+        // 1. Tenta query relacional
+        const relationalQuery = await supabase
+            .from('products')
+            .select(`
+                *,
+                product_images (
+                    image_url
+                )
+            `)
+            .order('created_at', { ascending: false });
+
+        let products = relationalQuery.data;
+        let error = relationalQuery.error;
+
+        // 2. Fallback: Se der erro (ex: tabela nao existe), tenta query simples
+        if (error) {
+            console.warn('⚠️ Erro na busca relacional. Usando fallback simples.', error.message);
+            const simpleQuery = await supabase
+                .from('products')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (simpleQuery.error) throw simpleQuery.error;
+            products = simpleQuery.data;
+            error = null;
+        }
+
+        // Transform data: Prioritize product_images table, fallback to images JSONB column
+        const formatted = products.map(p => {
+            let finalImages = [];
+
+            // 1. Try relational table
+            if (p.product_images && p.product_images.length > 0) {
+                finalImages = p.product_images.map(img => img.image_url);
+            }
+            // 2. Fallback to JSONB column (Backup)
+            else if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+                finalImages = p.images;
+            }
+            // 3. Last resort: Main image only
+            else if (p.image) {
+                finalImages = [p.image];
+            }
+
+            return {
+                ...p,
+                images: finalImages
+            };
+        });
+
+        res.json(formatted);
+
+    } catch (err) {
+        console.error('Erro ao buscar produtos:', err);
+        res.status(500).json({ error: 'Erro interno', details: err.message });
+    }
 });
 
+
 app.post('/api/products', authMiddleware, async (req, res) => {
-    const products = await getFreshData('products', 'products.json');
-    const newProduct = {
-        ...req.body,
-        id: products.length ? Math.max(...products.map(p => p.id || 0)) + 1 : 1,
-        created_at: new Date().toISOString()
-    };
-    products.push(newProduct);
-    await saveData('products', products, 'products.json');
-    res.status(201).json(newProduct);
+    const { name, price, oldPrice, description, category, image, images, variants, stock, badge, active } = req.body;
+
+    // 1. Insert Product (Saving images to JSONB too as backup)
+    const { data: product, error } = await supabase
+        .from('products')
+        .insert([{
+            name,
+            price,
+            "oldPrice": oldPrice,
+            description,
+            category,
+            image,      // Main image URL (cache)
+            images,     // BACKUP: Save to JSONB column too
+            variants,   // JSON of variants
+            stock,
+            badge,
+            active,
+            rating: 5,
+            reviews: 0
+        }])
+        .select()
+        .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    // 2. Insert Images (if any) to relational table
+    if (images && images.length > 0) {
+        try {
+            const imagesToInsert = images.map(url => ({
+                product_id: product.id,
+                image_url: url,
+                is_main: url === image
+            }));
+
+            const { error: imgError } = await supabase
+                .from('product_images')
+                .insert(imagesToInsert);
+
+            if (imgError) console.error('⚠️ Aviso: Falha ao salvar em product_images (verifique se a tabela existe). O backup em JSONB foi salvo.', imgError.message);
+        } catch (e) {
+            console.error('⚠️ Erro ao tentar salvar em product_images:', e);
+        }
+    }
+
+    res.status(201).json(product);
 });
 
 app.put('/api/products/:id', authMiddleware, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const products = await getFreshData('products', 'products.json');
-    const index = products.findIndex(p => p.id === id);
-    if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
-    products[index] = { ...products[index], ...req.body, updatedAt: new Date().toISOString() };
-    await saveData('products', products, 'products.json');
-    res.json(products[index]);
+    const id = req.params.id;
+    const { name, price, oldPrice, description, category, image, images, variants, stock, badge, active } = req.body;
+
+    // 1. Update Product (Saving images to JSONB too as backup)
+    const { data: product, error } = await supabase
+        .from('products')
+        .update({
+            name,
+            price,
+            "oldPrice": oldPrice,
+            description,
+            category,
+            image,
+            images,    // BACKUP: Update JSONB column
+            variants,
+            stock,
+            badge,
+            active,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    // 2. Update Images (Delete all and re-insert for simplicity)
+    if (images) {
+        try {
+            // Delete old
+            const { error: delError } = await supabase.from('product_images').delete().eq('product_id', id);
+
+            // Insert new (only if delete didn't fail hard, though we ignore explicit errors to rely on backup)
+            if (!delError && images.length > 0) {
+                const imagesToInsert = images.map(url => ({
+                    product_id: id,
+                    image_url: url,
+                    is_main: url === image
+                }));
+                await supabase.from('product_images').insert(imagesToInsert);
+            }
+        } catch (e) {
+            console.warn('⚠️ Falha ao atualizar tabela product_images (usando backup JSONB)', e);
+        }
+    }
+
+    res.json(product);
 });
 
 app.delete('/api/products/:id', authMiddleware, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const products = await getFreshData('products', 'products.json');
-    const filtered = products.filter(p => p.id !== id);
-    await saveData('products', filtered, 'products.json');
+    const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', req.params.id);
+
+    if (error) return res.status(500).json({ error: error.message });
     res.json({ message: 'Produto removido' });
 });
 
 // =============================================
-// CATEGORIES ROUTES (ASYNC)
+// CATEGORIES ROUTES (Supabase)
 // =============================================
 app.get('/api/categories', async (req, res) => {
-    const data = await getFreshData('categories', 'categories.json');
+    const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('order', { ascending: true });
+
+    if (error) return res.status(500).json({ error: error.message });
     res.json(data);
 });
 
 app.post('/api/categories', authMiddleware, async (req, res) => {
-    const categories = await getFreshData('categories', 'categories.json');
-    if (!req.body.id) req.body.id = `cat_${Date.now()}`;
-    categories.push(req.body);
-    await saveData('categories', categories, 'categories.json');
-    res.status(201).json(req.body);
-});
+    const { id, name, icon, link } = req.body;
+    // Ensure ID is unique string if not provided
+    const catId = id || `cat_${Date.now()}`;
 
-app.put('/api/categories/:id', authMiddleware, async (req, res) => {
-    const categories = await getFreshData('categories', 'categories.json');
-    const index = categories.findIndex(c => String(c.id) === String(req.params.id));
-    if (index === -1) return res.status(404).json({ error: 'Categoria não encontrada' });
-    categories[index] = { ...categories[index], ...req.body };
-    await saveData('categories', categories, 'categories.json');
-    res.json(categories[index]);
-});
+    const { data, error } = await supabase
+        .from('categories')
+        .insert([{ id: catId, name, icon, link }])
+        .select()
+        .single();
 
-app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
-    const categories = await getFreshData('categories', 'categories.json');
-    const filtered = categories.filter(c => String(c.id) !== String(req.params.id));
-    await saveData('categories', filtered, 'categories.json');
-    res.json({ message: 'Categoria removida' });
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data);
 });
 
 // =============================================
-// BANNERS ROUTES (ASYNC)
+// BANNERS ROUTES (Supabase)
 // =============================================
 app.get('/api/banners', async (req, res) => {
-    const data = await getFreshData('banners', 'banners.json');
+    const { data, error } = await supabase.from('banners').select('*').order('order');
+    if (error) return res.status(500).json({ error: error.message });
     res.json(data);
 });
 
 app.post('/api/banners', authMiddleware, async (req, res) => {
-    const banners = await getFreshData('banners', 'banners.json');
-    req.body.id = Date.now();
-    banners.push(req.body);
-    await saveData('banners', banners, 'banners.json');
-    res.status(201).json(req.body);
+    const { image, title, link, active } = req.body;
+    const { data, error } = await supabase
+        .from('banners')
+        .insert([{ image, title, link, active }])
+        .select()
+        .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data);
 });
 
 app.delete('/api/banners/:id', authMiddleware, async (req, res) => {
-    const banners = await getFreshData('banners', 'banners.json');
-    const filtered = banners.filter(b => b.id != req.params.id);
-    await saveData('banners', filtered, 'banners.json');
+    const { error } = await supabase.from('banners').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
     res.json({ message: 'Banner removido' });
 });
 
 // =============================================
-// SETTINGS ROUTES (ASYNC)
+// SETTINGS ROUTES (Supabase)
 // =============================================
 app.get('/api/settings', async (req, res) => {
-    let settings = await getFreshData('settings', 'settings.json');
-    if (Array.isArray(settings) && settings.length === 0) settings = {};
-    res.json(settings);
+    const { data, error } = await supabase
+        .from('settings')
+        .select('config')
+        .eq('id', 1)
+        .single();
+
+    if (error && error.code !== 'PGRST116') return res.status(500).json({ error: error.message });
+    res.json(data?.config || {});
 });
 
 app.put('/api/settings', authMiddleware, async (req, res) => {
-    await saveData('settings', req.body, 'settings.json');
-    res.json(req.body);
+    const config = req.body;
+    // Upsert logic for ID=1
+    const { data, error } = await supabase
+        .from('settings')
+        .upsert({ id: 1, config })
+        .select()
+        .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(config);
 });
 
 // =============================================
-// UPLOAD ROUTE (ImgBB + Base64 Fallback)
+// UPLOAD ROUTE (Supabase Storage)
 // =============================================
-async function uploadToImgBB(buffer, filename) {
-    if (!IMGBB_API_KEY) return null;
-    return new Promise((resolve, reject) => {
-        const base64Image = buffer.toString('base64');
-        const postData = `key=${IMGBB_API_KEY}&image=${encodeURIComponent(base64Image)}&name=${encodeURIComponent(filename)}`;
-        const options = {
-            hostname: 'api.imgbb.com',
-            path: '/1/upload',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Content-Length': Buffer.byteLength(postData)
-            }
-        };
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    const parsed = JSON.parse(data);
-                    if (parsed.success) resolve(parsed.data.display_url || parsed.data.url);
-                    else reject(new Error('ImgBB Error'));
-                } catch (e) { reject(e); }
-            });
-        });
-        req.on('error', reject);
-        req.write(postData);
-        req.end();
-    });
-}
-
 app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Nenhuma imagem enviada' });
 
     try {
-        const fileExt = req.file.originalname.split('.').pop().toLowerCase();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const fileExt = req.file.originalname.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `uploads/${fileName}`;
 
-        // 1. Tentar ImgBB
-        if (IMGBB_API_KEY) {
-            try {
-                const imgUrl = await uploadToImgBB(req.file.buffer, fileName);
-                if (imgUrl) return res.json({ filename: fileName, path: imgUrl });
-            } catch (e) {
-                console.log(`[IMGBB] Falha: ${e.message}, usando fallback...`);
-            }
-        }
+        const { data, error } = await supabase
+            .storage
+            .from('images')
+            .upload(filePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: false
+            });
 
-        // 2. Fallback Base64
-        const base64 = req.file.buffer.toString('base64');
-        const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
-        res.json({ filename: fileName, path: dataUrl });
+        if (error) throw error;
+
+        // Get Public URL
+        const { data: publicUrlData } = supabase
+            .storage
+            .from('images')
+            .getPublicUrl(filePath);
+
+        res.json({
+            filename: fileName,
+            path: publicUrlData.publicUrl
+        });
 
     } catch (error) {
+        console.error('Upload Error:', error);
         res.status(500).json({ error: 'Falha no upload', details: error.message });
     }
 });
@@ -363,33 +368,17 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
 // DEBUG ROUTES
 // =============================================
 app.get('/api/debug', async (req, res) => {
-    const products = await getFreshData('products', 'products.json');
     res.json({
         status: 'OK',
-        version: '3.2 (GitHub Priority)',
-        productsCount: products.length,
-        isVercel: !!process.env.VERCEL,
-        hasGitHubToken: !!GITHUB_TOKEN,
-        hasImgBBKey: !!IMGBB_API_KEY,
+        mode: 'SUPABASE_ONLY',
         timestamp: new Date().toISOString()
     });
 });
 
-app.get('/api/debug/github', async (req, res) => {
-    if (!GITHUB_TOKEN) return res.json({ error: 'GITHUB_TOKEN não configurado' });
-    try {
-        const user = await githubRequest('/user');
-        res.json({ status: 'OK', githubUser: user.login, tokenWorking: true });
-    } catch (err) {
-        res.json({ status: 'ERROR', error: err.message, tokenWorking: false });
-    }
-});
-
-// Export & Start
 module.exports = app;
 
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`🚀 Server v3.2 rodando em http://localhost:${PORT}`);
+        console.log(`🚀 Server v4.0 (Supabase) rodando em http://localhost:${PORT}`);
     });
 }

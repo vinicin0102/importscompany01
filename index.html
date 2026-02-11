@@ -19,6 +19,144 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css?v=2026">
+    <style>
+        /* Carousel Styles */
+        .hero {
+            position: relative;
+            height: 100vh;
+            min-height: 600px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .carousel-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .carousel-track {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .carousel-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .carousel-slide::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            /* Overlay */
+            z-index: 1;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            max-width: 800px;
+            padding: 20px;
+            animation: slideUp 0.8s ease-out 0.3s backwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-btn:hover {
+            background: var(--gold);
+            color: #000;
+            border-color: var(--gold);
+        }
+
+        .carousel-btn.prev {
+            left: 20px;
+        }
+
+        .carousel-btn.next {
+            right: 20px;
+        }
+
+        .carousel-indicators {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .carousel-dot.active {
+            background: var(--gold);
+            transform: scale(1.2);
+        }
+
+        @media(max-width: 768px) {
+            .carousel-btn {
+                display: none;
+            }
+
+            /* Ocultar setas no mobile */
+        }
+    </style>
 </head>
 
 <body>
@@ -61,16 +199,25 @@
         </nav>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Hero Section with Carousel -->
     <section class="hero" id="home">
-        <div class="hero-bg" style="background-image: url('images/hero_banner_full.png');"></div>
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-            <span class="hero-subtitle">Nova Coleção 2026</span>
-            <h1 class="hero-title">Estilo <span class="gold-text">Que Define</span></h1>
-            <p class="hero-desc">Peças exclusivas importadas diretamente das melhores marcas mundiais. Garantia de
-                autenticidade e sofisticação.</p>
-            <a href="#products" class="btn">Ver Coleção <i class="fas fa-arrow-right"></i></a>
+        <div class="carousel-container">
+            <div class="carousel-track" id="hero-track">
+                <!-- Slides will be injected here by JS -->
+                <div class="carousel-slide active" style="background-image: url('images/hero_banner_full.png');">
+                    <div class="hero-content">
+                        <span class="hero-subtitle">Nova Coleção 2026</span>
+                        <h1 class="hero-title">Estilo <span class="gold-text">Que Define</span></h1>
+                        <p class="hero-desc">Peças exclusivas importadas diretamente das melhores marcas mundiais.</p>
+                        <a href="#products" class="btn">Ver Coleção <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <button class="carousel-btn prev" onclick="moveSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+            <button class="carousel-btn next" onclick="moveSlide(1)"><i class="fas fa-chevron-right"></i></button>
+
+            <div class="carousel-indicators" id="hero-indicators"></div>
         </div>
     </section>
 
@@ -347,6 +494,69 @@
 
             // Configurar Zoom
             result.style.backgroundImage = `url('${data.img}')`;
+
+            // RENDERIZAR VARIANTES (Tamanhos e Cores)
+            const sizeContainer = document.querySelector('.size-btn').parentNode;
+            const colorContainer = document.querySelector('.color-options');
+
+            // Limpar containers
+            sizeContainer.innerHTML = '';
+            colorContainer.innerHTML = '';
+
+            if (data.variants && data.variants.length > 0) {
+                // Extrair tamanhos e cores únicos
+                const sizes = [...new Set(data.variants.map(v => v.size).filter(s => s))];
+                const colors = [...new Set(data.variants.map(v => v.color).filter(c => c))];
+
+                // Renderizar Tamanhos
+                if (sizes.length > 0) {
+                    sizes.forEach((size, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = `size-btn ${index === 0 ? 'selected' : ''}`;
+                        btn.innerText = size;
+                        btn.onclick = () => selectSize(btn);
+                        sizeContainer.appendChild(btn);
+                    });
+                } else {
+                    sizeContainer.innerHTML = '<span style="color:#666; font-size: 0.9rem;">Tamanho Único</span>';
+                }
+
+                // Renderizar Cores
+                if (colors.length > 0) {
+                    colors.forEach((color, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = `color-btn ${index === 0 ? 'selected' : ''}`;
+
+                        // Tentar adivinhar a cor CSS ou usar padrão
+                        // Mapeamento básico de cores em PT para CSS
+                        const colorMap = {
+                            'preto': '#000', 'branca': '#fff', 'branco': '#fff', 'azul': '#0000FF',
+                            'vermelho': '#FF0000', 'verde': '#008000', 'cinza': '#808080', 'rosa': '#FFC0CB',
+                            'amarelo': '#FFFF00', 'laranja': '#FFA500', 'roxo': '#800080', 'marrom': '#A52A2A',
+                            'bege': '#F5F5DC', 'vinho': '#800000', 'azul marinho': '#000080'
+                        };
+
+                        const cssColor = colorMap[color.toLowerCase()] || color;
+                        btn.style.backgroundColor = cssColor;
+
+                        // Se for branco ou claro, bota borda
+                        if (['#fff', '#ffffff', 'white', 'branco', 'branca', 'bege'].includes(cssColor.toLowerCase())) {
+                            btn.style.border = '1px solid #ccc';
+                        }
+
+                        btn.title = color; // Tooltip com nome da cor
+                        btn.onclick = () => selectColor(btn);
+                        colorContainer.appendChild(btn);
+                    });
+                } else {
+                    colorContainer.innerHTML = '<span style="color:#666; font-size: 0.9rem;">Cor Única</span>';
+                }
+
+            } else {
+                // Fallback para produtos sem variantes (Tamanho Único)
+                sizeContainer.innerHTML = '<button class="size-btn selected">UN</button>';
+                colorContainer.innerHTML = '<button class="color-btn selected" style="background-color: #1a2744;"></button>';
+            }
 
             modal.style.display = "block";
         }
