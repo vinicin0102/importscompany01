@@ -1313,47 +1313,58 @@
             const files = Array.from(input.files);
             if (!files.length) return;
 
+            input.value = ''; // Reset para permitir subir o mesmo arquivo se quiser
+
             const addBtn = document.querySelector('.gallery-add');
             const originalContent = addBtn.innerHTML;
-            addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            addBtn.style.pointerEvents = 'none';
 
             try {
-                const token = localStorage.getItem('adminToken');
-
                 for (const file of files) {
-                    const formData = new FormData();
-                    formData.append('image', file);
+                    await new Promise((resolve) => {
+                        openCropper(file, 1 / 1, async (croppedFile) => {
+                            addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            addBtn.style.pointerEvents = 'none';
 
-                    const response = await fetch('/api/upload', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
+                            try {
+                                const path = await uploadSingleProductImage(croppedFile);
+                                currentGallery.push(path);
+                                renderGallery();
+                            } catch (e) {
+                                showToast(e.message, 'error');
+                            } finally {
+                                addBtn.innerHTML = originalContent;
+                                addBtn.style.pointerEvents = 'auto';
+                                resolve();
+                            }
+                        });
                     });
-
-                    if (response.status === 401) {
-                        // Token expired
-                        localStorage.removeItem('adminToken');
-                        localStorage.removeItem('adminUser');
-                        window.location.href = '/admin/login.html';
-                        throw new Error('Sessão expirada. Faça login novamente.');
-                    }
-
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error || 'Erro no upload');
-
-                    currentGallery.push(data.path);
                 }
-
-                showToast(`${files.length} imagens carregadas!`);
-                renderGallery();
+                showToast('Imagens processadas com sucesso!');
             } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                addBtn.innerHTML = originalContent;
-                addBtn.style.pointerEvents = 'auto';
-                input.value = '';
+                console.error(err);
             }
+        }
+
+        async function uploadSingleProductImage(file) {
+            const token = localStorage.getItem('adminToken');
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (response.status === 401) {
+                logout();
+                throw new Error('Sessão expirada.');
+            }
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Erro no upload');
+
+            return data.path;
         }
 
         function removeImage(index) {
