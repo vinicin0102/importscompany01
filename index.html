@@ -578,6 +578,8 @@
         const result = document.getElementById("zoomResult");
         const container = document.getElementById("modalImageContainer");
 
+        let currentProductToken = null;
+
         // Init Cart Count
         document.addEventListener('DOMContentLoaded', () => {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
