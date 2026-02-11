@@ -16,14 +16,11 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
 // Supabase Client
-const rawUrl = process.env.SUPABASE_URL || 'https://ojoekqehkqhampsikuuk.supabase.co';
-const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qb2VrcWVoa3FoYW1wc2lrdXVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDgyMTYwMSwiZXhwIjoyMDg2Mzk3NjAxfQ.oYxbsPRK6Yhu6O7YxQfol08YzCv-qY0oTsLpDXvxL7k';
+// Forçamos o uso das chaves corretas ignorando variáveis de ambiente problemáticas
+const supabaseUrl = 'https://ojoekqehkqhampsikuuk.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qb2VrcWVoa3FoYW1wc2lrdXVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDgyMTYwMSwiZXhwIjoyMDg2Mzk3NjAxfQ.oYxbsPRK6Yhu6O7YxQfol08YzCv-qY0oTsLpDXvxL7k';
 
-// Limpeza agressiva: Remove qualquer espaço, quebra de linha ou caractere invisível
-const supabaseUrl = rawUrl.trim().replace(/[\n\r]/g, '');
-const supabaseKey = rawKey.trim().replace(/[\n\r\s]/g, '');
-
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.get('/api/sys-check', async (req, res) => {
     try {
