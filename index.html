@@ -563,8 +563,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="script.js?v=2026_final"></script>
-    <script src="admin-loader.js?v=admin_v1"></script>
+    <script src="script.js?v=2026_final_v2"></script>
+    <script src="admin-loader.js?v=admin_v2"></script>
 
     <script>
         // ==========================================
@@ -707,7 +707,8 @@
             } else {
                 // Fallback para produtos sem variantes (Tamanho Único)
                 sizeContainer.innerHTML = '<button class="size-btn selected">UN</button>';
-                colorContainer.innerHTML = '<button class="color-btn selected" style="background-color: #1a2744;"></button>';
+                colorContainer.innerHTML = '<button class="color-btn selected" style="background-color: #1a2744;" title="Cor Padrão"></button>';
+                document.getElementById('selected-color-name').innerText = 'Padrão';
             }
 
             modal.style.display = "block";
@@ -732,9 +733,14 @@
                 price: document.getElementById("modalPrice").innerText,
                 img: document.getElementById("modalImage").src,
                 size: document.querySelector('.size-btn.selected') ? document.querySelector('.size-btn.selected').innerText : 'Padrão',
-                color: document.querySelector('.color-btn.selected') ? (document.querySelector('.color-btn.selected').title || document.getElementById('selected-color-name').innerText) : 'Padrão',
+                color: document.querySelector('.color-btn.selected') ? (document.querySelector('.color-btn.selected').title || document.getElementById('selected-color-name').innerText || 'Padrão') : 'Padrão',
                 yampi_token: currentProductToken || null
             };
+
+            // VERIFICAÇÃO DE SEGURANÇA: Se a cor ainda for RGB, tenta limpar
+            if (product.color.includes('rgb(')) {
+                product.color = document.getElementById('selected-color-name').innerText || 'Padrão';
+            }
 
             // Salvar no LocalStorage
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
