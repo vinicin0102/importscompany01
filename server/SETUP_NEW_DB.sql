@@ -1,16 +1,8 @@
 -- ==============================================================================
 -- SCRIPT DE MIGRAÇÃO COMPLETA - IMPORTS COMPANY (NOVO PROJETO)
 -- ==============================================================================
---
--- INSTRUÇÕES:
--- 1. Acesse o Supabase: https://supabase.com/dashboard/project/ojoekqehkqhampsikuuk
--- 2. Vá em "SQL Editor" (ícone de terminal na esquerda)
--- 3. Clique em "New Query"
--- 4. Cole TODO este conteúdo e clique em "Run"
---
--- ==============================================================================
 
--- 1. LIMPEZA (Se quiser recomeçar do zero, descomente as linhas abaixo)
+-- 1. LIMPEZA
 -- DROP TABLE IF EXISTS products CASCADE;
 -- DROP TABLE IF EXISTS categories CASCADE;
 -- DROP TABLE IF EXISTS banners CASCADE;
@@ -19,11 +11,10 @@
 
 -- 2. CRIAR TABELAS
 
--- Tabela de Categorias
+-- Tabela de Categorias (Usando ID como Slug conforme frontend)
 CREATE TABLE IF NOT EXISTS categories (
-    id SERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY, -- O frontend envia o slug aqui
     name TEXT NOT NULL,
-    slug TEXT,
     description TEXT,
     icon TEXT,
     active BOOLEAN DEFAULT TRUE,
@@ -35,7 +26,7 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    category TEXT, -- armazenaremos o ID ou Slug da categoria aqui
+    category TEXT, -- armazenaremos o ID da categoria aqui
     price NUMERIC(10, 2) NOT NULL,
     "oldPrice" NUMERIC(10, 2),
     image TEXT,    -- url da imagem principal
@@ -46,6 +37,7 @@ CREATE TABLE IF NOT EXISTS products (
     rating NUMERIC(3, 1) DEFAULT 5.0,
     reviews INTEGER DEFAULT 0,
     variants JSONB DEFAULT '[]'::jsonb, -- Armazena array de {color, size, qty}
+    yampi_token TEXT,                   -- Token exclusivo do produto na Yampi
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -56,8 +48,12 @@ CREATE TABLE IF NOT EXISTS banners (
     id SERIAL PRIMARY KEY,
     title TEXT,
     subtitle TEXT,
+    description TEXT,
+    "buttonText" TEXT,
+    "buttonLink" TEXT,
     image TEXT NOT NULL,
     link TEXT,
+    "containMode" BOOLEAN DEFAULT FALSE,
     "position" TEXT, -- 'home_main', 'home_secondary'
     active BOOLEAN DEFAULT TRUE,
     "order" INTEGER DEFAULT 0,
@@ -101,18 +97,12 @@ VALUES (1, '{
 ON CONFLICT (id) DO NOTHING;
 
 -- Categorias Iniciais
-INSERT INTO categories (name, slug, "order") VALUES
-('Camisetas de Time', 'times', 1),
-('Tênis Esportivos', 'tenis', 2),
-('Acessórios', 'acessorios', 3),
-('Lançamentos', 'lancamentos', 4)
-ON CONFLICT DO NOTHING;
-
--- Produto Exemplo
-INSERT INTO products (name, category, price, "oldPrice", image, stock, badge, active)
-VALUES 
-('Camisa Brasil 2026', 'times', 299.90, 399.90, 'https://placehold.co/600x600/green/yellow?text=Brasil', 100, 'hot', true)
-ON CONFLICT DO NOTHING;
+INSERT INTO categories (id, name, "order") VALUES
+('times', 'Camisetas de Time', 1),
+('tenis', 'Tênis Esportivos', 2),
+('acessorios', 'Acessórios', 3),
+('lancamentos', 'Lançamentos', 4)
+ON CONFLICT (id) DO NOTHING;
 
 
 -- 4. CONFIGURAR STORAGE (BUCKET DE IMAGENS)
@@ -130,16 +120,16 @@ ON CONFLICT (id) DO UPDATE SET
     public = true,
     file_size_limit = 5242880;
 
--- 5. POLÍTICAS DE SEGURANÇA (RLS) - Permitir tudo para facilitar (ou autenticado para escrita)
+-- 5. POLÍTICAS DE SEGURANÇA (RLS)
 
--- Habilitar RLS nas tabelas
+-- Habilitar RLS
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE banners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
--- Limpar políticas existentes para evitar erros ao rodar o script novamente
+-- Limpar e recriar políticas
 DROP POLICY IF EXISTS "Public Read Products" ON products;
 DROP POLICY IF EXISTS "Public Read Categories" ON categories;
 DROP POLICY IF EXISTS "Public Read Banners" ON banners;
@@ -151,32 +141,26 @@ DROP POLICY IF EXISTS "Admin Write Banners" ON banners;
 DROP POLICY IF EXISTS "Admin Write Settings" ON settings;
 DROP POLICY IF EXISTS "Admin Users Access" ON users;
 
--- Política: Leitura Pública
 CREATE POLICY "Public Read Products" ON products FOR SELECT USING (true);
 CREATE POLICY "Public Read Categories" ON categories FOR SELECT USING (true);
 CREATE POLICY "Public Read Banners" ON banners FOR SELECT USING (true);
 CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
 
--- Política: Escrita Apenas Admin
 CREATE POLICY "Admin Write Products" ON products FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Write Categories" ON categories FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Write Banners" ON banners FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Write Settings" ON settings FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Users Access" ON users FOR ALL USING (true) WITH CHECK (true);
 
--- Policies do Storage (Imagens)
+-- Policies do Storage
 DROP POLICY IF EXISTS "Public Access Images" ON storage.objects;
 DROP POLICY IF EXISTS "Admin Manage Images" ON storage.objects;
 
--- Leitura Pública de Imagens
 CREATE POLICY "Public Access Images"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'products image' );
 
--- Upload/Update/Delete
 CREATE POLICY "Admin Manage Images"
 ON storage.objects FOR ALL
 USING ( bucket_id = 'products image' )
 WITH CHECK ( bucket_id = 'products image' );
-
--- FIM

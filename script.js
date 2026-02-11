@@ -171,19 +171,26 @@ async function initBannerCarousel() {
             const bgImage = banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : banner.image;
             slide.style.backgroundImage = `url('${bgImage}')`;
 
-            // Content (Title/Subtitle logic)
-            // Somente adiciona Overlay/Titulo se houver Título definido
-            if (banner.title) {
-                const linkHtml = banner.link
-                    ? `<a href="${banner.link}" class="btn">Saiba Mais <i class="fas fa-arrow-right"></i></a>`
-                    : `<a href="#products" class="btn">Ver Coleção <i class="fas fa-arrow-right"></i></a>`;
+            // Suporte para o modo "Contain" (mostrar imagem inteira)
+            if (banner.containMode) {
+                slide.style.backgroundSize = 'contain';
+                slide.style.backgroundRepeat = 'no-repeat';
+                slide.style.backgroundColor = '#000'; // Fundo preto para preencher sobras
+            }
+
+            // Content logic - Só renderiza se houver pelo menos um texto ou botão
+            const hasContent = banner.title || banner.subtitle || banner.description || banner.buttonText;
+
+            if (hasContent) {
+                const btnText = banner.buttonText || 'Ver Coleção';
+                const btnLink = banner.buttonLink || banner.link || '#products';
 
                 slide.innerHTML = `
                     <div class="hero-content">
-                        <span class="hero-subtitle">Nova Coleção</span>
-                        <h1 class="hero-title">${banner.title}</h1>
-                        <p class="hero-desc">Descubra a exclusividade que só a Imports Company oferece.</p>
-                        ${linkHtml}
+                        ${banner.subtitle ? `<span class="hero-subtitle">${banner.subtitle}</span>` : ''}
+                        ${banner.title ? `<h1 class="hero-title">${banner.title}</h1>` : ''}
+                        ${banner.description ? `<p class="hero-desc">${banner.description}</p>` : '<p class="hero-desc">Descubra a exclusividade que só a Imports Company oferece.</p>'}
+                        <a href="${btnLink}" class="btn">${btnText} <i class="fas fa-arrow-right"></i></a>
                     </div>
                 `;
             }
