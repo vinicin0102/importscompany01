@@ -639,7 +639,16 @@
             if (data.variants && data.variants.length > 0) {
                 // Extrair tamanhos e cores únicos
                 const sizes = [...new Set(data.variants.map(v => v.size).filter(s => s))];
-                const colors = [...new Set(data.variants.map(v => v.color).filter(c => c))];
+
+                // Extrair cores únicas (mantendo o hex se existir)
+                const uniqueColors = [];
+                const colorNames = new Set();
+                data.variants.forEach(v => {
+                    if (v.color && !colorNames.has(v.color.toLowerCase())) {
+                        colorNames.add(v.color.toLowerCase());
+                        uniqueColors.push({ name: v.color, hex: v.colorHex });
+                    }
+                });
 
                 // Renderizar Tamanhos
                 if (sizes.length > 0) {
@@ -655,21 +664,23 @@
                 }
 
                 // Renderizar Cores
-                if (colors.length > 0) {
-                    colors.forEach((color, index) => {
+                if (uniqueColors.length > 0) {
+                    uniqueColors.forEach((colorObj, index) => {
                         const btn = document.createElement('button');
                         btn.className = `color-btn ${index === 0 ? 'selected' : ''}`;
 
-                        // Tentar adivinhar a cor CSS ou usar padrão
-                        // Mapeamento básico de cores em PT para CSS
+                        const colorName = colorObj.name;
+                        const colorHex = colorObj.hex;
+
+                        // Tentar adivinhar a cor CSS ou usar o hex salvo
                         const colorMap = {
                             'preto': '#000', 'branca': '#fff', 'branco': '#fff', 'azul': '#0000FF',
                             'vermelho': '#FF0000', 'verde': '#008000', 'cinza': '#808080', 'rosa': '#FFC0CB',
                             'amarelo': '#FFFF00', 'laranja': '#FFA500', 'roxo': '#800080', 'marrom': '#A52A2A',
-                            'bege': '#F5F5DC', 'vinho': '#800000', 'azul marinho': '#000080'
+                            'bege': '#F5F5DC', 'vinho': '#800000', 'azul marinho': '#000080', 'verde militar': '#4B5320'
                         };
 
-                        const cssColor = colorMap[color.toLowerCase()] || color;
+                        const cssColor = colorHex || colorMap[colorName.toLowerCase()] || colorName;
                         btn.style.backgroundColor = cssColor;
 
                         // Se for branco ou claro, bota borda
@@ -677,7 +688,7 @@
                             btn.style.border = '1px solid #ccc';
                         }
 
-                        btn.title = color; // Tooltip com nome da cor
+                        btn.title = colorName; // Tooltip com nome da cor
                         btn.onclick = () => selectColor(btn);
                         colorContainer.appendChild(btn);
                     });

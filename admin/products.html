@@ -1369,12 +1369,15 @@
         }
 
         // ====== VARIANTS MANAGEMENT ======
-        function addVariant(color = '', size = '', qty = 0) {
+        function addVariant(color = '', size = '', qty = 0, hex = '#000000') {
             const tbody = document.getElementById('variant-body');
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
-                    <input type="text" class="v-color" placeholder="Ex: Preto" value="${color}" list="color-options">
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <input type="color" class="v-hex" value="${hex || '#000000'}" style="width: 30px; height: 30px; padding: 0; border: none; cursor: pointer; border-radius: 4px;">
+                        <input type="text" class="v-color" placeholder="Nome (Ex: Preto)" value="${color}" list="color-options" style="flex: 1;">
+                    </div>
                 </td>
                 <td>
                     <select class="v-size">
@@ -1413,7 +1416,7 @@
         function loadVariants(variants) {
             document.getElementById('variant-body').innerHTML = '';
             if (variants && variants.length > 0) {
-                variants.forEach(v => addVariant(v.color || '', v.size || '', v.qty || 0));
+                variants.forEach(v => addVariant(v.color || '', v.size || '', v.qty || 0, v.colorHex || ''));
             }
             updateVariantTotal();
         }
@@ -1423,10 +1426,11 @@
             const variants = [];
             rows.forEach(row => {
                 const color = row.querySelector('.v-color').value.trim();
+                const colorHex = row.querySelector('.v-hex').value;
                 const size = row.querySelector('.v-size').value;
                 const qty = parseInt(row.querySelector('.v-qty').value) || 0;
                 if (color || size) {
-                    variants.push({ color, size, qty });
+                    variants.push({ color, colorHex, size, qty });
                 }
             });
             return variants;
@@ -1510,6 +1514,20 @@
             }
         }
     </script>
+    <datalist id="color-options">
+        <option value="Preto">
+        <option value="Branco">
+        <option value="Azul Marinho">
+        <option value="Vermelho">
+        <option value="Verde Militar">
+        <option value="Cinza Mescla">
+        <option value="Rosa">
+        <option value="Bege">
+        <option value="Vinho">
+        <option value="Laranja">
+        <option value="Roxo">
+        <option value="Amarelo">
+    </datalist>
 </body>
 
 </html>
