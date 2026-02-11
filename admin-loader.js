@@ -132,11 +132,45 @@ function reattachEvents(card, data) {
 }
 
 function applySettings(settings) {
-    // Aplica Configurações visuais do Admin (Cores, Textos)
-    if (settings.storeName) document.title = settings.storeName;
+    if (settings.siteName) document.title = settings.siteName;
 
-    // Anúncio Bar
-    if (settings.announcements) {
-        // ... Lógica simples de atualização
+    // Injetar estilos dinâmicos de Layout
+    let dynamicStyles = '';
+
+    // Layout Mobile de Produtos (1 ou 2 por linha)
+    if (settings.mobileLayout) {
+        const columns = settings.mobileLayout === '1' ? '1fr' : '1fr 1fr';
+        dynamicStyles += `
+            @media (max-width: 768px) {
+                .products-grid {
+                    grid-template-columns: ${columns} !important;
+                }
+            }
+        `;
+    }
+
+    // Layout de Categorias (Quantidade por linha)
+    if (settings.categoryLayout) {
+        dynamicStyles += `
+            .categories-grid-home {
+                grid-template-columns: repeat(${settings.categoryLayout}, 1fr) !important;
+            }
+            @media (max-width: 992px) {
+                .categories-grid-home {
+                    grid-template-columns: repeat(2, 1fr) !important;
+                }
+            }
+            @media (max-width: 480px) {
+                .categories-grid-home {
+                    grid-template-columns: repeat(1, 1fr) !important;
+                }
+            }
+        `;
+    }
+
+    if (dynamicStyles) {
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = dynamicStyles;
+        document.head.appendChild(styleSheet);
     }
 }

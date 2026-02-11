@@ -141,6 +141,24 @@
                         </div>
                     </div>
 
+                    <!-- Layout Settings -->
+                    <div class="settings-section">
+                        <h2><i class="fas fa-th-large"></i> Layout do Site</h2>
+                        <div class="form-row two-cols">
+                            <div class="form-group">
+                                <label for="prod-mobile-layout">Produtos por Linha (Mobile)</label>
+                                <select id="prod-mobile-layout">
+                                    <option value="1">1 Produto</option>
+                                    <option value="2">2 Produtos</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cat-row-count">Categorias por Linha</label>
+                                <input type="number" id="cat-row-count" min="1" max="6" placeholder="Ex: 4">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Announcements -->
                     <div class="settings-section">
                         <h2><i class="fas fa-bullhorn"></i> Barra de Anúncios</h2>
@@ -222,6 +240,10 @@
                 document.getElementById('code-gold-light').textContent = settings.colors.goldLight || '#d4b86a';
             }
 
+            // Layout
+            document.getElementById('prod-mobile-layout').value = settings.mobileLayout || '2';
+            document.getElementById('cat-row-count').value = settings.categoryLayout || '4';
+
             // Social
             if (settings.socialLinks) {
                 document.getElementById('instagram').value = settings.socialLinks.instagram || '';
@@ -261,7 +283,9 @@
                     freeShipping: document.getElementById('ann-shipping').value,
                     authentic: document.getElementById('ann-authentic').value,
                     payment: document.getElementById('ann-payment').value
-                }
+                },
+                mobileLayout: document.getElementById('prod-mobile-layout').value,
+                categoryLayout: document.getElementById('cat-row-count').value
             };
 
             try {
