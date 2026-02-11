@@ -529,8 +529,9 @@
                     </div>
 
                     <div style="margin: 20px 0;">
-                        <label
-                            style="font-weight: bold; display: block; margin-bottom: 10px; color: #1a2744;">Cor:</label>
+                        <label style="font-weight: bold; display: block; margin-bottom: 10px; color: #1a2744;">Cor:
+                            <span id="selected-color-name"
+                                style="font-weight: normal; color: #666; margin-left: 5px;"></span></label>
                         <div class="color-options">
                             <button class="color-btn selected" style="background-color: #000;"
                                 onclick="selectColor(this)"></button>
@@ -689,11 +690,18 @@
                         }
 
                         btn.title = colorName; // Tooltip com nome da cor
-                        btn.onclick = () => selectColor(btn);
+                        btn.onclick = () => {
+                            selectColor(btn);
+                            document.getElementById('selected-color-name').innerText = colorName;
+                        };
                         colorContainer.appendChild(btn);
+
+                        // Set initial color name
+                        if (index === 0) document.getElementById('selected-color-name').innerText = colorName;
                     });
                 } else {
                     colorContainer.innerHTML = '<span style="color:#666; font-size: 0.9rem;">Cor Única</span>';
+                    document.getElementById('selected-color-name').innerText = '';
                 }
 
             } else {
@@ -714,6 +722,7 @@
         window.selectColor = (btn) => {
             document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
+            if (btn.title) document.getElementById('selected-color-name').innerText = btn.title;
         }
 
         // Ações de Compra
