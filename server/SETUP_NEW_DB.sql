@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     slug TEXT,
+    description TEXT,
+    icon TEXT,
+    active BOOLEAN DEFAULT TRUE,
     "order" INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
