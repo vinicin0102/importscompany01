@@ -139,9 +139,25 @@ async function initBannerCarousel() {
         // Filtra ativos e ordena
         const activeBanners = banners.filter(b => b.active).sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        if (activeBanners.length === 0) return; // Mantém o default HTML se não houver banners
-
-        const track = document.getElementById('hero-track');
+        if (activeBanners.length === 0) {
+            // Se não houver banners no Admin, cria indicadores para os estáticos no HTML
+            const slideElements = document.querySelectorAll('.carousel-slide');
+            const indicators = document.getElementById('hero-indicators');
+            if (indicators) {
+                indicators.innerHTML = '';
+                slideElements.forEach((_, index) => {
+                    const dot = document.createElement('div');
+                    dot.className = `carousel-dot ${index === 0 ? 'active' : ''}`;
+                    dot.onclick = () => {
+                        goToSlide(index);
+                        startCarousel();
+                    };
+                    indicators.appendChild(dot);
+                });
+            }
+            startCarousel();
+            return;
+        }
         const indicators = document.getElementById('hero-indicators');
 
         track.innerHTML = '';
