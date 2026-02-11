@@ -173,6 +173,8 @@ async function initBannerCarousel() {
             slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
             const bgImage = banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : banner.image;
             slide.style.backgroundImage = `url('${bgImage}')`;
+            slide.style.backgroundPosition = 'center center';
+            slide.style.backgroundSize = 'cover'; // Default
 
             // Suporte para o modo "Contain" (mostrar imagem inteira)
             if (banner.containMode) {
