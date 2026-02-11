@@ -114,11 +114,11 @@ ON CONFLICT DO NOTHING;
 
 -- 4. CONFIGURAR STORAGE (BUCKET DE IMAGENS)
 
--- Criar bucket 'images' se não existir
+-- Criar bucket 'products image' se não existir
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
-    'images', 
-    'images', 
+    'products image', 
+    'products image', 
     true, 
     5242880, -- 5MB limit
     ARRAY['image/png', 'image/jpeg', 'image/gif', 'image/webp']::text[]
@@ -153,19 +153,17 @@ CREATE POLICY "Admin Users Access" ON users FOR ALL USING (true) WITH CHECK (tru
 
 -- Policies do Storage (Imagens)
 DROP POLICY IF EXISTS "Public Access Images" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated Upload Images" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated Update Images" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated Delete Images" ON storage.objects;
+DROP POLICY IF EXISTS "Admin Manage Images" ON storage.objects;
 
 -- Leitura Pública de Imagens
 CREATE POLICY "Public Access Images"
 ON storage.objects FOR SELECT
-USING ( bucket_id = 'images' );
+USING ( bucket_id = 'products image' );
 
 -- Upload/Update/Delete (Permitir tudo para Service Role/Authenticated)
 CREATE POLICY "Admin Manage Images"
 ON storage.objects FOR ALL
-USING ( bucket_id = 'images' )
-WITH CHECK ( bucket_id = 'images' );
+USING ( bucket_id = 'products image' )
+WITH CHECK ( bucket_id = 'products image' );
 
 -- FIM

@@ -167,10 +167,10 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
     try {
         const fileExt = path.extname(req.file.originalname);
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${fileExt}`;
-        const filePath = `${fileName}`; // Raiz do bucket ou pasta específica
+        const filePath = `${fileName}`; // Raiz do bucket
 
         const { data, error } = await supabase.storage
-            .from('images')
+            .from('products image')
             .upload(filePath, req.file.buffer, {
                 contentType: req.file.mimetype,
                 upsert: false
@@ -180,7 +180,7 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
 
         // Gerar URL Pública
         const { data: { publicUrl } } = supabase.storage
-            .from('images')
+            .from('products image')
             .getPublicUrl(filePath);
 
         res.json({
