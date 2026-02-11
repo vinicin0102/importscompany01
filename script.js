@@ -158,7 +158,10 @@ async function initBannerCarousel() {
             startCarousel();
             return;
         }
+        const track = document.getElementById('hero-track');
         const indicators = document.getElementById('hero-indicators');
+
+        if (!track || !indicators) return;
 
         track.innerHTML = '';
         indicators.innerHTML = '';
