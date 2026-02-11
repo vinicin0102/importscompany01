@@ -114,7 +114,8 @@ function reattachEvents(card, data) {
         installment: `ou 12x de R$ ${(data.price / 12).toFixed(2).replace('.', ',')}`,
         category: data.category || 'Oferta',
         variants: data.variants || [],
-        yampi_token: data.yampi_token || null
+        yampi_token: data.yampi_token || null,
+        images: data.images || []
     };
 
     const openModalHandler = (e) => {

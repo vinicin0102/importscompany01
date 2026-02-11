@@ -212,6 +212,36 @@
             color: #666;
             line-height: 1.4;
         }
+
+        /* Product Modal Gallery Thumbs */
+        .product-gallery-thumbs {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            overflow-x: auto;
+            padding: 5px;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .thumb-item {
+            width: 65px;
+            height: 65px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid #eee;
+            transition: all 0.2s;
+            object-fit: cover;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+
+        .thumb-item:hover,
+        .thumb-item.active {
+            border-color: var(--gold);
+            opacity: 1;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 
@@ -471,6 +501,9 @@
                     <div id="zoomLens" class="zoom-lens"></div>
                     <div id="zoomResult" class="zoom-result"></div>
                     <div class="zoom-hint"><i class="fas fa-search-plus"></i> Passe o mouse para zoom</div>
+
+                    <!-- NOVO: Carrossel de Miniaturas -->
+                    <div class="product-gallery-thumbs" id="productThumbs"></div>
                 </div>
 
                 <!-- Info Side -->
@@ -557,12 +590,40 @@
         // Abrir Modal com dados do Produto
         function openProductModal(data) {
             currentProductToken = data.yampi_token || null;
-            document.getElementById("modalImage").src = data.img;
+            const mainImg = document.getElementById("modalImage");
+            mainImg.src = data.img;
             document.getElementById("modalTitle").innerText = data.title;
             document.getElementById("modalPrice").innerText = data.price;
             document.getElementById("modalOldPrice").innerText = data.oldPrice;
             document.getElementById("modalInstallment").innerText = data.installment;
             document.getElementById("modalCategory").innerText = data.category;
+
+            // Renderizar Miniaturas (Carrossel)
+            const thumbContainer = document.getElementById('productThumbs');
+            thumbContainer.innerHTML = '';
+
+            // Unir a imagem principal com a galeria (removendo duplicatas)
+            const allImages = [...new Set([data.img, ...(data.images || [])])];
+
+            if (allImages.length > 1) {
+                allImages.forEach((src, index) => {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.className = `thumb-item ${src === data.img ? 'active' : ''}`;
+                    img.onclick = () => {
+                        mainImg.style.opacity = '0.5';
+                        setTimeout(() => {
+                            mainImg.src = src;
+                            result.style.backgroundImage = `url('${src}')`;
+                            mainImg.style.opacity = '1';
+                        }, 150);
+
+                        document.querySelectorAll('.thumb-item').forEach(t => t.classList.remove('active'));
+                        img.classList.add('active');
+                    };
+                    thumbContainer.appendChild(img);
+                });
+            }
 
             // Configurar Zoom
             result.style.backgroundImage = `url('${data.img}')`;
