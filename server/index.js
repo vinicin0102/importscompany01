@@ -16,38 +16,44 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
 // Supabase Client
-const supabaseUrl = (process.env.SUPABASE_URL || 'https://ojoekqehkqhampsikuuk.supabase.co').trim();
-// Tenta pegar do ENV, se não tiver usa a Service Role Key fornecida hardcoded como fallback
-const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qb2VrcWVoa3FoYW1wc2lrdXVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDgyMTYwMSwiZXhwIjoyMDg2Mzk3NjAxfQ.oYxbsPRK6Yhu6O7YxQfol08YzCv-qY0oTsLpDXvxL7k').trim();
+const rawUrl = process.env.SUPABASE_URL || 'https://ojoekqehkqhampsikuuk.supabase.co';
+const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qb2VrcWVoa3FoYW1wc2lrdXVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDgyMTYwMSwiZXhwIjoyMDg2Mzk3NjAxfQ.oYxbsPRK6Yhu6O7YxQfol08YzCv-qY0oTsLpDXvxL7k';
 
-if (!supabaseUrl || !supabaseKey) {
-    console.error('❌ ERRO CRÍTICO: Supabase URL ou Key não definidos no .env');
-    // Em vez de crashar o processo na Vercel (o que gera 500 HTML genérico),
-    // vamos definir o supabase como null e retornar erro na API se tentar usar.
-}
+// Limpeza agressiva: Remove qualquer espaço, quebra de linha ou caractere invisível
+const supabaseUrl = rawUrl.trim().replace(/[\n\r]/g, '');
+const supabaseKey = rawKey.trim().replace(/[\n\r\s]/g, '');
 
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
-
-// Middleware para checar Supabase antes de rotas que precisam dele
-// Middleware to check Supabase before specific routes
-const requireSupabase = (req, res, next) => {
-    if (!supabase) {
-        return res.status(500).json({
-            error: 'Erro de Configuração no Servidor',
-            details: 'Variáveis de ambiente do Supabase não configuradas (SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY).'
-        });
-    }
-    next();
-};
 
 app.get('/api/sys-check', async (req, res) => {
     try {
         if (!supabase) throw new Error('Cliente Supabase não inicializado.');
+
+        // Diagnóstico de Chave
+        const keyParts = supabaseKey.split('.');
+        const keyDetails = {
+            length: supabaseKey.length,
+            parts: keyParts.length,
+            prefix: supabaseKey.substring(0, 10) + '...',
+            suffix: '...' + supabaseKey.substring(supabaseKey.length - 10),
+            isFormatValid: keyParts.length === 3
+        };
+
         const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
         if (error) throw error;
-        res.json({ ok: true, msg: 'Supabase Conectado', count });
+
+        res.json({ ok: true, msg: 'Supabase Conectado com Sucesso!', count, keyDetails });
     } catch (err) {
-        res.status(500).json({ ok: false, error: err.message, stack: err.stack, hints: 'Verifique se o projeto não está PAUSADO no Supabase.' });
+        res.status(500).json({
+            ok: false,
+            error: err.message,
+            keyDebug: {
+                length: supabaseKey.length,
+                parts: supabaseKey.split('.').length,
+                prefix: supabaseKey.substring(0, 10) + '...'
+            },
+            hints: 'Se o erro for Invalid Compact JWS, a SERVICE_ROLE_KEY na Vercel está mal formatada.'
+        });
     }
 });
 
