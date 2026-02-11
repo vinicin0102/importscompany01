@@ -156,6 +156,62 @@
 
             /* Ocultar setas no mobile */
         }
+
+        /* Home Categories Grid */
+        .categories-grid-home {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .category-card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid transparent;
+        }
+
+        .category-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-icon {
+            width: 70px;
+            height: 70px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.8rem;
+            color: var(--primary);
+            transition: all 0.3s;
+        }
+
+        .category-card:hover .category-icon {
+            background: var(--gold);
+            color: white;
+        }
+
+        .category-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #1a2744;
+        }
+
+        .category-card p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
     </style>
 </head>
 
@@ -218,6 +274,21 @@
             <button class="carousel-btn next" onclick="moveSlide(1)"><i class="fas fa-chevron-right"></i></button>
 
             <div class="carousel-indicators" id="hero-indicators"></div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="section" id="categories" style="background: #f8f9fa;">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Coleções</span>
+                <h2 class="section-title">Navegue por <span class="gold-text">Categorias</span></h2>
+                <div style="width: 60px; height: 3px; background: var(--gold); margin: 20px auto;"></div>
+            </div>
+            <div class="categories-grid-home" id="categories-container">
+                <!-- Injetado via JS -->
+                <div class="loading-simple">Carregando categorias...</div>
+            </div>
         </div>
     </section>
 
@@ -677,6 +748,36 @@
 
             btn.onclick = (e) => { e.preventDefault(); openProductModal(getData()); };
             imgWrapper.onclick = (e) => { e.preventDefault(); openProductModal(getData()); };
+        });
+
+        // Carregar Categorias Dinamicamente
+        async function initCategories() {
+            try {
+                const response = await fetch('/api/categories');
+                const categories = await response.json();
+                const activeCategories = categories.filter(c => c.active).sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                const container = document.getElementById('categories-container');
+                if (!container) return;
+
+                if (activeCategories.length > 0) {
+                    container.innerHTML = activeCategories.map(cat => `
+                        <div class="category-card" onclick="window.location.href='#products'">
+                            <div class="category-icon">
+                                <i class="fas ${cat.icon || 'fa-tag'}"></i>
+                            </div>
+                            <h3>${cat.name}</h3>
+                            <p>${cat.description || ''}</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Erro ao carregar categorias:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCategories();
         });
 
     </script>
