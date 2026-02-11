@@ -129,22 +129,32 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- 5. POLÍTICAS DE SEGURANÇA (RLS) - Permitir tudo para facilitar (ou autenticado para escrita)
 
--- Habilitar RLS nas tabelas (boa prática, mesmo que liberemos tudo por enquanto)
+-- Habilitar RLS nas tabelas
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE banners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
--- Política: Leitura Pública (Qualquer um pode ver produtos)
+-- Limpar políticas existentes para evitar erros ao rodar o script novamente
+DROP POLICY IF EXISTS "Public Read Products" ON products;
+DROP POLICY IF EXISTS "Public Read Categories" ON categories;
+DROP POLICY IF EXISTS "Public Read Banners" ON banners;
+DROP POLICY IF EXISTS "Public Read Settings" ON settings;
+
+DROP POLICY IF EXISTS "Admin Write Products" ON products;
+DROP POLICY IF EXISTS "Admin Write Categories" ON categories;
+DROP POLICY IF EXISTS "Admin Write Banners" ON banners;
+DROP POLICY IF EXISTS "Admin Write Settings" ON settings;
+DROP POLICY IF EXISTS "Admin Users Access" ON users;
+
+-- Política: Leitura Pública
 CREATE POLICY "Public Read Products" ON products FOR SELECT USING (true);
 CREATE POLICY "Public Read Categories" ON categories FOR SELECT USING (true);
 CREATE POLICY "Public Read Banners" ON banners FOR SELECT USING (true);
 CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
 
--- Política: Escrita Apenas Admin (Authenticated ou Service Role)
--- Nota: O backend usa a Chave Service Role, que ignora RLS. 
--- Mas se usarmos cliente autenticado, precisamos dessas policies.
+-- Política: Escrita Apenas Admin
 CREATE POLICY "Admin Write Products" ON products FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Write Categories" ON categories FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Write Banners" ON banners FOR ALL USING (true) WITH CHECK (true);
@@ -160,7 +170,7 @@ CREATE POLICY "Public Access Images"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'products image' );
 
--- Upload/Update/Delete (Permitir tudo para Service Role/Authenticated)
+-- Upload/Update/Delete
 CREATE POLICY "Admin Manage Images"
 ON storage.objects FOR ALL
 USING ( bucket_id = 'products image' )
