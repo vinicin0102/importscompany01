@@ -732,7 +732,7 @@
                 price: document.getElementById("modalPrice").innerText,
                 img: document.getElementById("modalImage").src,
                 size: document.querySelector('.size-btn.selected') ? document.querySelector('.size-btn.selected').innerText : 'Padrão',
-                color: document.querySelector('.color-btn.selected') ? document.querySelector('.color-btn.selected').style.backgroundColor : 'Padrão',
+                color: document.querySelector('.color-btn.selected') ? (document.querySelector('.color-btn.selected').title || document.getElementById('selected-color-name').innerText) : 'Padrão',
                 yampi_token: currentProductToken || null
             };
 
