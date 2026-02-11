@@ -16,8 +16,9 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
 // Supabase Client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || 'https://fqcczeccwajvxaxibyii.supabase.co';
+// Tenta pegar do ENV, se não tiver usa a Service Role Key fornecida hardcoded como fallback
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY2N6ZWNjd2FqdnhheGliYnlpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDY2MzcxNSwiZXhwIjoyMDg2MjM5NzE1fQ.ut5fx-TzV4qE-NYScf0MinPQImFzZdu-dK6hYSacGNA';
 
 if (!supabaseUrl || !supabaseKey) {
     console.error('❌ ERRO CRÍTICO: Supabase URL ou Key não definidos no .env');
