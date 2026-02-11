@@ -16,9 +16,9 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
 // Supabase Client
-const supabaseUrl = process.env.SUPABASE_URL || 'https://fqcczeccwajvxaxibyii.supabase.co';
+const supabaseUrl = (process.env.SUPABASE_URL || 'https://fqcczeccwajvxaxibyii.supabase.co').trim();
 // Tenta pegar do ENV, se não tiver usa a Service Role Key fornecida hardcoded como fallback
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY2N6ZWNjd2FqdnhheGliYnlpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDY2MzcxNSwiZXhwIjoyMDg2MjM5NzE1fQ.ut5fx-TzV4qE-NYScf0MinPQImFzZdu-dK6hYSacGNA';
+const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY2N6ZWNjd2FqdnhheGliYnlpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDY2MzcxNSwiZXhwIjoyMDg2MjM5NzE1fQ.ut5fx-TzV4qE-NYScf0MinPQImFzZdu-dK6hYSacGNA').trim();
 
 if (!supabaseUrl || !supabaseKey) {
     console.error('❌ ERRO CRÍTICO: Supabase URL ou Key não definidos no .env');
@@ -29,6 +29,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Middleware para checar Supabase antes de rotas que precisam dele
+// Middleware to check Supabase before specific routes
 const requireSupabase = (req, res, next) => {
     if (!supabase) {
         return res.status(500).json({
@@ -38,6 +39,17 @@ const requireSupabase = (req, res, next) => {
     }
     next();
 };
+
+app.get('/api/sys-check', async (req, res) => {
+    try {
+        if (!supabase) throw new Error('Cliente Supabase não inicializado.');
+        const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
+        if (error) throw error;
+        res.json({ ok: true, msg: 'Supabase Conectado', count });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message, stack: err.stack, hints: 'Verifique se o projeto não está PAUSADO no Supabase.' });
+    }
+});
 
 // Middleware
 app.use(cors());
