@@ -758,15 +758,22 @@
                 }
 
                 // ============================================
-                // SISTEMA DE TROCA DE COR VIA CSS FILTERS
+                // SISTEMA DE TROCA DE COR VIA CANVAS (PIXEL A PIXEL)
+                // Só muda a cor da roupa, preserva fundo/logo
                 // ============================================
-                // Converte HEX para HSL
-                function hexToHSL(hex) {
+
+                function hexToRGB(hex) {
                     hex = hex.replace('#', '');
                     if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-                    const r = parseInt(hex.substring(0, 2), 16) / 255;
-                    const g = parseInt(hex.substring(2, 4), 16) / 255;
-                    const b = parseInt(hex.substring(4, 6), 16) / 255;
+                    return {
+                        r: parseInt(hex.substring(0, 2), 16),
+                        g: parseInt(hex.substring(2, 4), 16),
+                        b: parseInt(hex.substring(4, 6), 16)
+                    };
+                }
+
+                function rgbToHSL(r, g, b) {
+                    r /= 255; g /= 255; b /= 255;
                     const max = Math.max(r, g, b), min = Math.min(r, g, b);
                     let h, s, l = (max + min) / 2;
                     if (max === min) { h = s = 0; }
@@ -779,16 +786,105 @@
                             case b: h = ((r - g) / d + 4) / 6; break;
                         }
                     }
-                    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+                    return { h: h * 360, s: s, l: l };
                 }
 
-                // Pega a cor base do produto (primeira variante)
-                const baseColorHex = uniqueColors.length > 0 ? uniqueColors[0].hex : null;
-                const baseHSL = baseColorHex ? hexToHSL(baseColorHex) : { h: 0, s: 50, l: 50 };
+                function hslToRGB(h, s, l) {
+                    h /= 360;
+                    let r, g, b;
+                    if (s === 0) { r = g = b = l; }
+                    else {
+                        const hue2rgb = (p, q, t) => {
+                            if (t < 0) t += 1; if (t > 1) t -= 1;
+                            if (t < 1 / 6) return p + (q - p) * 6 * t;
+                            if (t < 1 / 2) return q;
+                            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                            return p;
+                        };
+                        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                        const p = 2 * l - q;
+                        r = hue2rgb(p, q, h + 1 / 3);
+                        g = hue2rgb(p, q, h);
+                        b = hue2rgb(p, q, h - 1 / 3);
+                    }
+                    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+                }
 
-                // Renderizar Cores
+                function hexToHSL(hex) {
+                    const rgb = hexToRGB(hex);
+                    return rgbToHSL(rgb.r, rgb.g, rgb.b);
+                }
+
+                // Guarda imagem original
+                let _originalImageSrc = data.img;
+                const _canvasRecolor = document.createElement('canvas');
+                const _ctxRecolor = _canvasRecolor.getContext('2d');
+
+                // Recolorir só a roupa, pixel a pixel
+                function recolorImage(targetHex) {
+                    const mainImg = document.getElementById('modalImage');
+                    const zoomRes = document.getElementById('zoomResult');
+
+                    const tempImg = new Image();
+                    tempImg.crossOrigin = 'anonymous';
+                    tempImg.onload = () => {
+                        _canvasRecolor.width = tempImg.width;
+                        _canvasRecolor.height = tempImg.height;
+                        _ctxRecolor.drawImage(tempImg, 0, 0);
+
+                        const imageData = _ctxRecolor.getImageData(0, 0, tempImg.width, tempImg.height);
+                        const px = imageData.data;
+
+                        const baseRGB = hexToRGB(baseColorHex);
+                        const baseH = rgbToHSL(baseRGB.r, baseRGB.g, baseRGB.b);
+                        const targetRGB = hexToRGB(targetHex);
+                        const targetH = rgbToHSL(targetRGB.r, targetRGB.g, targetRGB.b);
+
+                        const hueDiff = targetH.h - baseH.h;
+                        const satRatio = baseH.s > 0.05 ? targetH.s / baseH.s : 1;
+                        const lightDiff = targetH.l - baseH.l;
+
+                        for (let i = 0; i < px.length; i += 4) {
+                            const pHSL = rgbToHSL(px[i], px[i + 1], px[i + 2]);
+
+                            // IGNORAR pixels neutros (fundo branco/cinza/preto)
+                            if (pHSL.s < 0.08) continue;
+                            if (pHSL.l > 0.95) continue;
+                            if (pHSL.l < 0.03) continue;
+
+                            // Recolorir
+                            let newH = pHSL.h + hueDiff;
+                            if (newH < 0) newH += 360;
+                            if (newH >= 360) newH -= 360;
+
+                            let newS = Math.max(0, Math.min(1, pHSL.s * satRatio));
+                            let newL = Math.max(0.02, Math.min(0.98, pHSL.l + lightDiff * 0.5));
+
+                            const newRGB = hslToRGB(newH, newS, newL);
+                            px[i] = newRGB.r;
+                            px[i + 1] = newRGB.g;
+                            px[i + 2] = newRGB.b;
+                        }
+
+                        _ctxRecolor.putImageData(imageData, 0, 0);
+                        const resultUrl = _canvasRecolor.toDataURL('image/png');
+
+                        mainImg.style.opacity = '0.5';
+                        setTimeout(() => {
+                            mainImg.src = resultUrl;
+                            mainImg.style.filter = 'none';
+                            if (zoomRes) zoomRes.style.backgroundImage = `url('${resultUrl}')`;
+                            mainImg.style.opacity = '1';
+                        }, 150);
+                    };
+                    tempImg.src = _originalImageSrc;
+                }
+
+                // Cor base (primeira variante = cor da foto original)
+                const baseColorHex = uniqueColors.length > 0 ? (uniqueColors[0].hex || '#808080') : '#808080';
+
+                // Renderizar botões de cores
                 if (uniqueColors.length > 0) {
-                    // Mapa de cores por nome
                     const colorMap = {
                         'preto': '#000000', 'branca': '#ffffff', 'branco': '#ffffff', 'azul': '#0000FF',
                         'vermelho': '#FF0000', 'verde': '#008000', 'cinza': '#808080', 'rosa': '#FFC0CB',
@@ -800,64 +896,37 @@
                     uniqueColors.forEach((colorObj, index) => {
                         const btn = document.createElement('button');
                         btn.className = `color-btn ${index === 0 ? 'selected' : ''}`;
-
                         const colorName = colorObj.name;
                         const colorHex = colorObj.hex || colorMap[colorName.toLowerCase()] || '#808080';
-                        const cssColor = colorHex;
 
-                        btn.style.backgroundColor = cssColor;
+                        btn.style.backgroundColor = colorHex;
                         btn.title = colorName;
 
-                        // Borda para cores claras
-                        const targetHSL = hexToHSL(cssColor);
-                        if (targetHSL.l > 85 || targetHSL.s < 10 && targetHSL.l > 70) {
+                        const tHSL = hexToHSL(colorHex);
+                        if (tHSL.l > 0.85 || (tHSL.s < 0.1 && tHSL.l > 0.7)) {
                             btn.style.border = '1px solid #ccc';
                         }
 
                         btn.onclick = () => {
                             selectColor(btn);
                             document.getElementById('selected-color-name').innerText = colorName;
-
                             const mainImg = document.getElementById('modalImage');
-                            const targetColor = hexToHSL(cssColor);
+                            const zoomRes = document.getElementById('zoomResult');
 
-                            // Calcular filtros CSS
                             if (index === 0) {
-                                // Primeira cor (original) = sem filtro
-                                mainImg.style.filter = 'none';
+                                // Voltar à foto original
+                                mainImg.style.opacity = '0.5';
+                                setTimeout(() => {
+                                    mainImg.src = _originalImageSrc;
+                                    mainImg.style.filter = 'none';
+                                    if (zoomRes) zoomRes.style.backgroundImage = `url('${_originalImageSrc}')`;
+                                    mainImg.style.opacity = '1';
+                                }, 150);
                             } else {
-                                // Calcular rotação de hue
-                                let hueDiff = targetColor.h - baseHSL.h;
-
-                                // Ajustes de saturação e brilho
-                                let satRatio = baseHSL.s > 0 ? targetColor.s / baseHSL.s : 1;
-                                let brightRatio = baseHSL.l > 0 ? targetColor.l / baseHSL.l : 1;
-
-                                // Limitar valores extremos
-                                satRatio = Math.max(0, Math.min(3, satRatio));
-                                brightRatio = Math.max(0.3, Math.min(2, brightRatio));
-
-                                // Tratamento especial: Preto
-                                if (targetColor.l < 15) {
-                                    mainImg.style.filter = `brightness(0.15) saturate(0.2)`;
-                                }
-                                // Tratamento especial: Branco
-                                else if (targetColor.l > 90 && targetColor.s < 15) {
-                                    mainImg.style.filter = `brightness(1.8) saturate(0.1)`;
-                                }
-                                // Tratamento especial: Cinza
-                                else if (targetColor.s < 15) {
-                                    mainImg.style.filter = `saturate(0.15) brightness(${brightRatio})`;
-                                }
-                                // Cor não-acromática (Azul, Vermelho, Verde, etc.)
-                                else {
-                                    mainImg.style.filter = `hue-rotate(${hueDiff}deg) saturate(${satRatio}) brightness(${brightRatio})`;
-                                }
+                                recolorImage(colorHex);
                             }
                         };
                         colorContainer.appendChild(btn);
-
-                        // Set initial color name
                         if (index === 0) document.getElementById('selected-color-name').innerText = colorName;
                     });
                 } else {
