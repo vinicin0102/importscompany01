@@ -584,10 +584,8 @@
 
                 <!-- Image Side with Zoom -->
                 <div class="modal-image-container" id="modalImageContainer">
-                    <img id="modalImage" src="" alt="Produto" class="modal-main-img">
-                    <div id="product-tint-overlay"
-                        style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2; mix-blend-mode:multiply; opacity:0; transition:opacity 0.3s;">
-                    </div>
+                    <img id="modalImage" src="" alt="Produto" class="modal-main-img"
+                        style="transition: filter 0.4s ease;">
                     <div id="zoomLens" class="zoom-lens"></div>
                     <div id="zoomResult" class="zoom-result"></div>
                     <div class="zoom-hint"><i class="fas fa-search-plus"></i> Passe o mouse para zoom</div>
@@ -685,6 +683,7 @@
             currentProductToken = data.yampi_token || null;
             const mainImg = document.getElementById("modalImage");
             mainImg.src = data.img;
+            mainImg.style.filter = 'none'; // Resetar filtro de cor
             document.getElementById("modalTitle").innerText = data.title;
             document.getElementById("modalPrice").innerText = data.price;
             document.getElementById("modalOldPrice").innerText = data.oldPrice;
@@ -733,7 +732,7 @@
                 // Extrair tamanhos e cores únicos
                 const sizes = [...new Set(data.variants.map(v => v.size).filter(s => s))];
 
-                // Extrair cores únicas (mantendo o hex e imagem se existir)
+                // Extrair cores únicas (mantendo o hex)
                 const uniqueColors = [];
                 const colorNames = new Set();
 
@@ -741,13 +740,7 @@
                     const cName = v.color ? v.color.toLowerCase() : '';
                     if (cName && !colorNames.has(cName)) {
                         colorNames.add(cName);
-                        uniqueColors.push({ name: v.color, hex: v.colorHex, image: v.image });
-                    } else if (cName) {
-                        // Se a cor já existe, mas a variante atual tem imagem e a salva não, atualiza
-                        const existing = uniqueColors.find(u => u.name.toLowerCase() === cName);
-                        if (existing && !existing.image && v.image) {
-                            existing.image = v.image;
-                        }
+                        uniqueColors.push({ name: v.color, hex: v.colorHex });
                     }
                 });
 
@@ -764,67 +757,101 @@
                     sizeContainer.innerHTML = '<span style="color:#666; font-size: 0.9rem;">Tamanho Único</span>';
                 }
 
+                // ============================================
+                // SISTEMA DE TROCA DE COR VIA CSS FILTERS
+                // ============================================
+                // Converte HEX para HSL
+                function hexToHSL(hex) {
+                    hex = hex.replace('#', '');
+                    if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                    const r = parseInt(hex.substring(0, 2), 16) / 255;
+                    const g = parseInt(hex.substring(2, 4), 16) / 255;
+                    const b = parseInt(hex.substring(4, 6), 16) / 255;
+                    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                    let h, s, l = (max + min) / 2;
+                    if (max === min) { h = s = 0; }
+                    else {
+                        const d = max - min;
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        switch (max) {
+                            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                            case g: h = ((b - r) / d + 2) / 6; break;
+                            case b: h = ((r - g) / d + 4) / 6; break;
+                        }
+                    }
+                    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+                }
+
+                // Pega a cor base do produto (primeira variante)
+                const baseColorHex = uniqueColors.length > 0 ? uniqueColors[0].hex : null;
+                const baseHSL = baseColorHex ? hexToHSL(baseColorHex) : { h: 0, s: 50, l: 50 };
+
                 // Renderizar Cores
                 if (uniqueColors.length > 0) {
+                    // Mapa de cores por nome
+                    const colorMap = {
+                        'preto': '#000000', 'branca': '#ffffff', 'branco': '#ffffff', 'azul': '#0000FF',
+                        'vermelho': '#FF0000', 'verde': '#008000', 'cinza': '#808080', 'rosa': '#FFC0CB',
+                        'amarelo': '#FFFF00', 'laranja': '#FFA500', 'roxo': '#800080', 'marrom': '#8B4513',
+                        'bege': '#F5F5DC', 'vinho': '#800020', 'azul marinho': '#000080', 'verde militar': '#4B5320',
+                        'navy': '#000080', 'red': '#FF0000', 'blue': '#0000FF', 'black': '#000000', 'white': '#ffffff'
+                    };
+
                     uniqueColors.forEach((colorObj, index) => {
                         const btn = document.createElement('button');
                         btn.className = `color-btn ${index === 0 ? 'selected' : ''}`;
 
                         const colorName = colorObj.name;
-                        const colorHex = colorObj.hex;
+                        const colorHex = colorObj.hex || colorMap[colorName.toLowerCase()] || '#808080';
+                        const cssColor = colorHex;
 
-                        // Guardar imagem no dataset
-                        if (colorObj.image) {
-                            btn.dataset.image = colorObj.image;
-                        }
-
-                        // Tentar adivinhar a cor CSS ou usar o hex salvo
-                        const colorMap = {
-                            'preto': '#000', 'branca': '#fff', 'branco': '#fff', 'azul': '#0000FF',
-                            'vermelho': '#FF0000', 'verde': '#008000', 'cinza': '#808080', 'rosa': '#FFC0CB',
-                            'amarelo': '#FFFF00', 'laranja': '#FFA500', 'roxo': '#800080', 'marrom': '#A52A2A',
-                            'bege': '#F5F5DC', 'vinho': '#800000', 'azul marinho': '#000080', 'verde militar': '#4B5320'
-                        };
-
-                        const cssColor = colorHex || colorMap[colorName.toLowerCase()] || colorName;
                         btn.style.backgroundColor = cssColor;
+                        btn.title = colorName;
 
-                        // Se for branco ou claro, bota borda
-                        if (['#fff', '#ffffff', 'white', 'branco', 'branca', 'bege'].includes(cssColor.toLowerCase())) {
+                        // Borda para cores claras
+                        const targetHSL = hexToHSL(cssColor);
+                        if (targetHSL.l > 85 || targetHSL.s < 10 && targetHSL.l > 70) {
                             btn.style.border = '1px solid #ccc';
                         }
 
-                        btn.title = colorName; // Tooltip com nome da cor
                         btn.onclick = () => {
                             selectColor(btn);
                             document.getElementById('selected-color-name').innerText = colorName;
 
-                            const tintOverlay = document.getElementById('product-tint-overlay');
+                            const mainImg = document.getElementById('modalImage');
+                            const targetColor = hexToHSL(cssColor);
 
-                            // NEW: Mudar imagem se tiver, SENAO aplica Tint
-                            if (btn.dataset.image) {
-                                // Tem imagem específica -> Remove tint e troca imagem
-                                if (tintOverlay) tintOverlay.style.opacity = '0';
-
-                                const mainImg = document.getElementById("modalImage");
-                                const zoomRes = document.getElementById("zoomResult");
-
-                                // Efeito fade
-                                mainImg.style.opacity = '0.5';
-                                setTimeout(() => {
-                                    mainImg.src = btn.dataset.image;
-                                    zoomRes.style.backgroundImage = `url('${btn.dataset.image}')`;
-                                    mainImg.style.opacity = '1';
-                                }, 150);
+                            // Calcular filtros CSS
+                            if (index === 0) {
+                                // Primeira cor (original) = sem filtro
+                                mainImg.style.filter = 'none';
                             } else {
-                                // NÃO tem imagem específica -> Aplica TINT na imagem original
-                                if (tintOverlay) {
-                                    if (cssColor && cssColor !== '#ffffff' && cssColor !== '#fff' && cssColor !== 'white' && cssColor !== 'transparent') {
-                                        tintOverlay.style.backgroundColor = cssColor;
-                                        tintOverlay.style.opacity = '0.5'; // Opacidade média para tingir
-                                    } else {
-                                        tintOverlay.style.opacity = '0';
-                                    }
+                                // Calcular rotação de hue
+                                let hueDiff = targetColor.h - baseHSL.h;
+
+                                // Ajustes de saturação e brilho
+                                let satRatio = baseHSL.s > 0 ? targetColor.s / baseHSL.s : 1;
+                                let brightRatio = baseHSL.l > 0 ? targetColor.l / baseHSL.l : 1;
+
+                                // Limitar valores extremos
+                                satRatio = Math.max(0, Math.min(3, satRatio));
+                                brightRatio = Math.max(0.3, Math.min(2, brightRatio));
+
+                                // Tratamento especial: Preto
+                                if (targetColor.l < 15) {
+                                    mainImg.style.filter = `brightness(0.15) saturate(0.2)`;
+                                }
+                                // Tratamento especial: Branco
+                                else if (targetColor.l > 90 && targetColor.s < 15) {
+                                    mainImg.style.filter = `brightness(1.8) saturate(0.1)`;
+                                }
+                                // Tratamento especial: Cinza
+                                else if (targetColor.s < 15) {
+                                    mainImg.style.filter = `saturate(0.15) brightness(${brightRatio})`;
+                                }
+                                // Cor não-acromática (Azul, Vermelho, Verde, etc.)
+                                else {
+                                    mainImg.style.filter = `hue-rotate(${hueDiff}deg) saturate(${satRatio}) brightness(${brightRatio})`;
                                 }
                             }
                         };
