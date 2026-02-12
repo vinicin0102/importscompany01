@@ -584,8 +584,7 @@
 
                 <!-- Image Side with Zoom -->
                 <div class="modal-image-container" id="modalImageContainer">
-                    <img id="modalImage" src="" alt="Produto" class="modal-main-img"
-                        style="transition: filter 0.4s ease;">
+                    <img id="modalImage" src="" alt="Produto" class="modal-main-img">
                     <div id="zoomLens" class="zoom-lens"></div>
                     <div id="zoomResult" class="zoom-result"></div>
                     <div class="zoom-hint"><i class="fas fa-search-plus"></i> Passe o mouse para zoom</div>
@@ -683,7 +682,6 @@
             currentProductToken = data.yampi_token || null;
             const mainImg = document.getElementById("modalImage");
             mainImg.src = data.img;
-            mainImg.style.filter = 'none'; // Resetar filtro de cor
             document.getElementById("modalTitle").innerText = data.title;
             document.getElementById("modalPrice").innerText = data.price;
             document.getElementById("modalOldPrice").innerText = data.oldPrice;
@@ -732,7 +730,7 @@
                 // Extrair tamanhos e cores únicos
                 const sizes = [...new Set(data.variants.map(v => v.size).filter(s => s))];
 
-                // Extrair cores únicas (mantendo o hex)
+                // Extrair cores únicas (mantendo o hex e imagem se existir)
                 const uniqueColors = [];
                 const colorNames = new Set();
 
@@ -740,7 +738,13 @@
                     const cName = v.color ? v.color.toLowerCase() : '';
                     if (cName && !colorNames.has(cName)) {
                         colorNames.add(cName);
-                        uniqueColors.push({ name: v.color, hex: v.colorHex });
+                        uniqueColors.push({ name: v.color, hex: v.colorHex, image: v.image });
+                    } else if (cName) {
+                        // Se a cor já existe, mas a variante atual tem imagem e a salva não, atualiza
+                        const existing = uniqueColors.find(u => u.name.toLowerCase() === cName);
+                        if (existing && !existing.image && v.image) {
+                            existing.image = v.image;
+                        }
                     }
                 });
 
@@ -757,176 +761,58 @@
                     sizeContainer.innerHTML = '<span style="color:#666; font-size: 0.9rem;">Tamanho Único</span>';
                 }
 
-                // ============================================
-                // SISTEMA DE TROCA DE COR VIA CANVAS (PIXEL A PIXEL)
-                // Só muda a cor da roupa, preserva fundo/logo
-                // ============================================
-
-                function hexToRGB(hex) {
-                    hex = hex.replace('#', '');
-                    if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-                    return {
-                        r: parseInt(hex.substring(0, 2), 16),
-                        g: parseInt(hex.substring(2, 4), 16),
-                        b: parseInt(hex.substring(4, 6), 16)
-                    };
-                }
-
-                function rgbToHSL(r, g, b) {
-                    r /= 255; g /= 255; b /= 255;
-                    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-                    let h, s, l = (max + min) / 2;
-                    if (max === min) { h = s = 0; }
-                    else {
-                        const d = max - min;
-                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                        switch (max) {
-                            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-                            case g: h = ((b - r) / d + 2) / 6; break;
-                            case b: h = ((r - g) / d + 4) / 6; break;
-                        }
-                    }
-                    return { h: h * 360, s: s, l: l };
-                }
-
-                function hslToRGB(h, s, l) {
-                    h /= 360;
-                    let r, g, b;
-                    if (s === 0) { r = g = b = l; }
-                    else {
-                        const hue2rgb = (p, q, t) => {
-                            if (t < 0) t += 1; if (t > 1) t -= 1;
-                            if (t < 1 / 6) return p + (q - p) * 6 * t;
-                            if (t < 1 / 2) return q;
-                            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                            return p;
-                        };
-                        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                        const p = 2 * l - q;
-                        r = hue2rgb(p, q, h + 1 / 3);
-                        g = hue2rgb(p, q, h);
-                        b = hue2rgb(p, q, h - 1 / 3);
-                    }
-                    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-                }
-
-                function hexToHSL(hex) {
-                    const rgb = hexToRGB(hex);
-                    return rgbToHSL(rgb.r, rgb.g, rgb.b);
-                }
-
-                // Guarda imagem original
-                let _originalImageSrc = data.img;
-                const _canvasRecolor = document.createElement('canvas');
-                const _ctxRecolor = _canvasRecolor.getContext('2d');
-
-                // Recolorir só a roupa, pixel a pixel
-                function recolorImage(targetHex) {
-                    const mainImg = document.getElementById('modalImage');
-                    const zoomRes = document.getElementById('zoomResult');
-
-                    const tempImg = new Image();
-                    tempImg.crossOrigin = 'anonymous';
-                    tempImg.onload = () => {
-                        _canvasRecolor.width = tempImg.width;
-                        _canvasRecolor.height = tempImg.height;
-                        _ctxRecolor.drawImage(tempImg, 0, 0);
-
-                        const imageData = _ctxRecolor.getImageData(0, 0, tempImg.width, tempImg.height);
-                        const px = imageData.data;
-
-                        const baseRGB = hexToRGB(baseColorHex);
-                        const baseH = rgbToHSL(baseRGB.r, baseRGB.g, baseRGB.b);
-                        const targetRGB = hexToRGB(targetHex);
-                        const targetH = rgbToHSL(targetRGB.r, targetRGB.g, targetRGB.b);
-
-                        const hueDiff = targetH.h - baseH.h;
-                        const satRatio = baseH.s > 0.05 ? targetH.s / baseH.s : 1;
-                        const lightDiff = targetH.l - baseH.l;
-
-                        for (let i = 0; i < px.length; i += 4) {
-                            const pHSL = rgbToHSL(px[i], px[i + 1], px[i + 2]);
-
-                            // IGNORAR pixels neutros (fundo branco/cinza/preto)
-                            if (pHSL.s < 0.08) continue;
-                            if (pHSL.l > 0.95) continue;
-                            if (pHSL.l < 0.03) continue;
-
-                            // Recolorir
-                            let newH = pHSL.h + hueDiff;
-                            if (newH < 0) newH += 360;
-                            if (newH >= 360) newH -= 360;
-
-                            let newS = Math.max(0, Math.min(1, pHSL.s * satRatio));
-                            let newL = Math.max(0.02, Math.min(0.98, pHSL.l + lightDiff * 0.5));
-
-                            const newRGB = hslToRGB(newH, newS, newL);
-                            px[i] = newRGB.r;
-                            px[i + 1] = newRGB.g;
-                            px[i + 2] = newRGB.b;
-                        }
-
-                        _ctxRecolor.putImageData(imageData, 0, 0);
-                        const resultUrl = _canvasRecolor.toDataURL('image/png');
-
-                        mainImg.style.opacity = '0.5';
-                        setTimeout(() => {
-                            mainImg.src = resultUrl;
-                            mainImg.style.filter = 'none';
-                            if (zoomRes) zoomRes.style.backgroundImage = `url('${resultUrl}')`;
-                            mainImg.style.opacity = '1';
-                        }, 150);
-                    };
-                    tempImg.src = _originalImageSrc;
-                }
-
-                // Cor base (primeira variante = cor da foto original)
-                const baseColorHex = uniqueColors.length > 0 ? (uniqueColors[0].hex || '#808080') : '#808080';
-
-                // Renderizar botões de cores
+                // Renderizar Cores
                 if (uniqueColors.length > 0) {
-                    const colorMap = {
-                        'preto': '#000000', 'branca': '#ffffff', 'branco': '#ffffff', 'azul': '#0000FF',
-                        'vermelho': '#FF0000', 'verde': '#008000', 'cinza': '#808080', 'rosa': '#FFC0CB',
-                        'amarelo': '#FFFF00', 'laranja': '#FFA500', 'roxo': '#800080', 'marrom': '#8B4513',
-                        'bege': '#F5F5DC', 'vinho': '#800020', 'azul marinho': '#000080', 'verde militar': '#4B5320',
-                        'navy': '#000080', 'red': '#FF0000', 'blue': '#0000FF', 'black': '#000000', 'white': '#ffffff'
-                    };
-
                     uniqueColors.forEach((colorObj, index) => {
                         const btn = document.createElement('button');
                         btn.className = `color-btn ${index === 0 ? 'selected' : ''}`;
+
                         const colorName = colorObj.name;
-                        const colorHex = colorObj.hex || colorMap[colorName.toLowerCase()] || '#808080';
+                        const colorHex = colorObj.hex;
 
-                        btn.style.backgroundColor = colorHex;
-                        btn.title = colorName;
+                        // Guardar imagem no dataset
+                        if (colorObj.image) {
+                            btn.dataset.image = colorObj.image;
+                        }
 
-                        const tHSL = hexToHSL(colorHex);
-                        if (tHSL.l > 0.85 || (tHSL.s < 0.1 && tHSL.l > 0.7)) {
+                        // Tentar adivinhar a cor CSS ou usar o hex salvo
+                        const colorMap = {
+                            'preto': '#000', 'branca': '#fff', 'branco': '#fff', 'azul': '#0000FF',
+                            'vermelho': '#FF0000', 'verde': '#008000', 'cinza': '#808080', 'rosa': '#FFC0CB',
+                            'amarelo': '#FFFF00', 'laranja': '#FFA500', 'roxo': '#800080', 'marrom': '#A52A2A',
+                            'bege': '#F5F5DC', 'vinho': '#800000', 'azul marinho': '#000080', 'verde militar': '#4B5320'
+                        };
+
+                        const cssColor = colorHex || colorMap[colorName.toLowerCase()] || colorName;
+                        btn.style.backgroundColor = cssColor;
+
+                        // Se for branco ou claro, bota borda
+                        if (['#fff', '#ffffff', 'white', 'branco', 'branca', 'bege'].includes(cssColor.toLowerCase())) {
                             btn.style.border = '1px solid #ccc';
                         }
 
+                        btn.title = colorName; // Tooltip com nome da cor
                         btn.onclick = () => {
                             selectColor(btn);
                             document.getElementById('selected-color-name').innerText = colorName;
-                            const mainImg = document.getElementById('modalImage');
-                            const zoomRes = document.getElementById('zoomResult');
 
-                            if (index === 0) {
-                                // Voltar à foto original
+                            // NEW: Mudar imagem se tiver
+                            if (btn.dataset.image) {
+                                const mainImg = document.getElementById("modalImage");
+                                const zoomRes = document.getElementById("zoomResult");
+
+                                // Efeito fade
                                 mainImg.style.opacity = '0.5';
                                 setTimeout(() => {
-                                    mainImg.src = _originalImageSrc;
-                                    mainImg.style.filter = 'none';
-                                    if (zoomRes) zoomRes.style.backgroundImage = `url('${_originalImageSrc}')`;
+                                    mainImg.src = btn.dataset.image;
+                                    zoomRes.style.backgroundImage = `url('${btn.dataset.image}')`;
                                     mainImg.style.opacity = '1';
                                 }, 150);
-                            } else {
-                                recolorImage(colorHex);
                             }
                         };
                         colorContainer.appendChild(btn);
+
+                        // Set initial color name
                         if (index === 0) document.getElementById('selected-color-name').innerText = colorName;
                     });
                 } else {
