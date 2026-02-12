@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS categories (
     name TEXT NOT NULL,
     icon TEXT,
     link TEXT,
+    description TEXT,
+    active BOOLEAN DEFAULT TRUE,
     "order" INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

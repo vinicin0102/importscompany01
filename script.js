@@ -170,6 +170,7 @@ async function initBannerCarousel() {
         activeBanners.forEach((banner, index) => {
             // Slide
             const slide = document.createElement('div');
+            slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
             const isMobile = window.innerWidth <= 768;
             let bgImage = banner.image;
 

@@ -19,10 +19,12 @@ async function migrate() {
     if (categories.length > 0) {
         console.log(`📦 Migrando ${categories.length} categorias...`);
         const { error } = await supabase.from('categories').upsert(categories.map(c => ({
-            id: parseInt(c.id),
+            id: c.id,
             name: c.name,
             icon: c.icon,
             link: c.link,
+            description: c.description || '',
+            active: c.active !== undefined ? c.active : true,
             order: c.order || 0
         })), { onConflict: 'id' });
 
