@@ -344,33 +344,44 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            const ratio = type === 'desktop' ? (16 / 9) : (9 / 16);
+            // Validação simples de tamanho (50MB)
+            if (file.size > 50 * 1024 * 1024) {
+                showToast('Arquivo muito grande! Máximo 50MB.', 'error');
+                return;
+            }
+
             const previewId = type === 'desktop' ? 'image-preview' : 'image-mobile-preview';
             const hiddenId = type === 'desktop' ? 'banner-image' : 'banner-image-mobile';
             const urlId = type === 'desktop' ? 'banner-image-url' : 'banner-image-mobile-url';
+            const originalContent = document.getElementById(previewId).innerHTML;
 
-            openCropper(file, ratio, async (croppedFile) => {
-                const formData = new FormData();
-                formData.append('image', croppedFile);
+            // Show loading state
+            document.getElementById(previewId).innerHTML = `<div style="text-align:center"><i class="fas fa-spinner fa-spin fa-2x"></i><br><span>Enviando...</span></div>`;
 
-                try {
-                    const response = await fetch('/api/upload', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error);
+            const formData = new FormData();
+            formData.append('image', file);
 
-                    document.getElementById(hiddenId).value = data.path;
-                    document.getElementById(urlId).value = '';
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
+                    body: formData
+                });
 
-                    document.getElementById(previewId).innerHTML = `<img src="${data.path}" alt="Preview">`;
-                    showToast(`Imagem ${type} recortada e enviada!`);
-                } catch (error) {
-                    showToast('Erro: ' + error.message, 'error');
-                }
-            });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Erro no upload');
+
+                document.getElementById(hiddenId).value = data.path;
+                document.getElementById(urlId).value = '';
+
+                // Update preview
+                document.getElementById(previewId).innerHTML = `<img src="${data.path}" alt="Preview" style="object-fit: contain; width: 100%; height: 100%;">`;
+                showToast(`Imagem ${type === 'desktop' ? 'Desktop' : 'Mobile'} enviada com sucesso!`);
+            } catch (error) {
+                console.error(error);
+                document.getElementById(previewId).innerHTML = originalContent; // Restore on error
+                showToast('Erro: ' + error.message, 'error');
+            }
         }
     </script>
 </body>

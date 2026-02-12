@@ -132,6 +132,24 @@ window.moveSlide = function (direction) {
 };
 
 async function initBannerCarousel() {
+    // Ensure CSS for responsive banners exists
+    if (!document.getElementById('banner-responsive-css')) {
+        const css = document.createElement('style');
+        css.id = 'banner-responsive-css';
+        css.innerHTML = `
+            .carousel-slide {
+                background-image: var(--bg-desktop, none);
+                transition: background-image 0.3s ease-in-out;
+            }
+            @media (max-width: 768px) {
+                .carousel-slide {
+                    background-image: var(--bg-mobile, var(--bg-desktop, none));
+                }
+            }
+        `;
+        document.head.appendChild(css);
+    }
+
     try {
         const response = await fetch('/api/banners');
         const banners = await response.json();
@@ -169,29 +187,32 @@ async function initBannerCarousel() {
 
         activeBanners.forEach((banner, index) => {
             // Slide
+            // Slide
             const slide = document.createElement('div');
             slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
-            const isMobile = window.innerWidth <= 768;
-            let bgImage = banner.image;
 
-            // Usa imagem mobile se existir e estiver no mobile
-            if (isMobile && banner.image_mobile) {
-                bgImage = banner.image_mobile;
-            }
+            // Resolve Images
+            let imgDesktop = banner.image || 'images/placeholder.png';
+            let imgMobile = banner.image_mobile || imgDesktop;
 
-            if (bgImage && !bgImage.startsWith('http') && !bgImage.startsWith('/')) {
-                bgImage = bgImage; // Caminho relativo
-            }
+            // Fix relative paths if needed
+            if (imgDesktop && !imgDesktop.startsWith('http') && !imgDesktop.startsWith('/')) imgDesktop = imgDesktop;
+            if (imgMobile && !imgMobile.startsWith('http') && !imgMobile.startsWith('/')) imgMobile = imgMobile;
 
-            slide.style.backgroundImage = `url('${bgImage}')`;
+            // Set CSS Variables directly on the element
+            slide.style.setProperty('--bg-desktop', `url('${imgDesktop}')`);
+            slide.style.setProperty('--bg-mobile', `url('${imgMobile}')`);
+
+            // Apply base styles
             slide.style.backgroundPosition = 'center center';
-            slide.style.backgroundSize = 'cover'; // Default
 
             // Suporte para o modo "Contain" (mostrar imagem inteira)
             if (banner.containMode) {
                 slide.style.backgroundSize = 'contain';
                 slide.style.backgroundRepeat = 'no-repeat';
                 slide.style.backgroundColor = '#000';
+            } else {
+                slide.style.backgroundSize = 'cover';
             }
 
             // Content logic - Só renderiza se houver pelo menos um texto ou botão
