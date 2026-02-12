@@ -635,6 +635,11 @@
                             <i class="fas fa-lock"></i> COMPRAR AGORA
                         </button>
 
+                        <button class="btn-add-cart" onclick="addToCartFromModal()"
+                            style="background: #1a2744; color: white; border: none; padding: 14px 30px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; transition: 0.3s;">
+                            <i class="fas fa-shopping-bag"></i> ADICIONAR AO CARRINHO
+                        </button>
+
                         <button class="btn-whatsapp" onclick="buyWhatsapp()">
                             <i class="fab fa-whatsapp"></i> COMPRAR PELO WHATSAPP
                         </button>
@@ -642,8 +647,8 @@
 
                     <div
                         style="margin-top: 20px; font-size: 0.9rem; color: #555; display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
-                        <i class="fas fa-truck" style="color: #1a2744;"></i>
-                        <span>Frete Grátis & Entrega Segura para todo Brasil</span>
+                        <i class="fas fa-truck" style="color: #28a745;"></i>
+                        <span><strong>Frete Grátis</strong> a partir de R$ 999</span>
                     </div>
                 </div>
             </div>
@@ -875,6 +880,36 @@
             const badges = document.querySelectorAll('.cart-count');
             badges.forEach(b => b.textContent = count);
         }
+
+        window.addToCartFromModal = () => {
+            const product = {
+                title: document.getElementById("modalTitle").innerText,
+                price: document.getElementById("modalPrice").innerText,
+                img: document.getElementById("modalImage").src,
+                size: document.querySelector('.size-btn.selected') ? document.querySelector('.size-btn.selected').innerText : 'Padrão',
+                color: document.querySelector('.color-btn.selected') ? (document.querySelector('.color-btn.selected').title || document.getElementById('selected-color-name').innerText || 'Padrão') : 'Padrão',
+                yampi_token: currentProductToken || null
+            };
+
+            if (product.color.includes('rgb(')) {
+                product.color = document.getElementById('selected-color-name').innerText || 'Padrão';
+            }
+
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.push(product);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount(cart.length);
+
+            // Feedback visual
+            const btn = document.querySelector('.btn-add-cart');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> ADICIONADO!';
+            btn.style.background = '#28a745';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.background = '#1a2744';
+            }, 2000);
+        };
 
         window.buyWhatsapp = () => {
             const product = document.getElementById("modalTitle").innerText;

@@ -146,7 +146,7 @@
                 </div>
                 <div class="summary-row">
                     <span>Frete</span>
-                    <span style="color: green;">Grátis</span>
+                    <span id="frete-value" style="color: green;">Grátis a partir de R$ 999</span>
                 </div>
                 <div class="summary-total">
                     <span>Total</span>
@@ -200,9 +200,22 @@
             });
 
             // Update Totals
-            const totalFormatted = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById('subtotal').innerText = totalFormatted;
-            document.getElementById('total').innerText = totalFormatted;
+            const subtotalFormatted = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('subtotal').innerText = subtotalFormatted;
+
+            // Frete: Grátis acima de R$ 999
+            const freteEl = document.getElementById('frete-value');
+            if (total >= 999) {
+                freteEl.innerText = 'Grátis';
+                freteEl.style.color = 'green';
+                document.getElementById('total').innerText = subtotalFormatted;
+            } else {
+                const frete = 49.90;
+                const totalComFrete = total + frete;
+                freteEl.innerText = 'R$ 49,90';
+                freteEl.style.color = '#e74c3c';
+                document.getElementById('total').innerText = totalComFrete.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            }
         });
 
         function removeItem(index) {
