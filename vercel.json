@@ -46,6 +46,27 @@
             }
         },
         {
+            "src": "/(.*)\\.html$",
+            "dest": "/$1.html",
+            "headers": {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+        },
+        {
+            "src": "/(.*)\\.css$",
+            "dest": "/$1.css",
+            "headers": {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+        },
+        {
+            "src": "/(.*)\\.js$",
+            "dest": "/$1.js",
+            "headers": {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+        },
+        {
             "src": "/(.*)",
             "dest": "/$1"
         }
