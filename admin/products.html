@@ -961,9 +961,14 @@
     <main class="main">
         <div class="page-header">
             <h1><i class="fas fa-box"></i> Produtos</h1>
-            <button class="btn btn-primary" onclick="openNewModal()">
-                <i class="fas fa-plus"></i> Novo Produto
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="exportCSV()">
+                    <i class="fas fa-file-export"></i> Exportar Planilha
+                </button>
+                <button class="btn btn-primary" onclick="openNewModal()">
+                    <i class="fas fa-plus"></i> Novo Produto
+                </button>
+            </div>
         </div>
 
         <!-- TOOLBAR -->
@@ -1572,6 +1577,86 @@
             } catch (err) {
                 showToast('Erro: ' + err.message, 'error');
             }
+        }
+
+        // ====== EXPORT CSV (YAMPI) ======
+        function exportCSV() {
+            if (!products || products.length === 0) {
+                showToast('Nenhum produto para exportar.', 'error');
+                return;
+            }
+
+            // Header CSV
+            const headers = ['SKU', 'Nome', 'Preço', 'Preço Antigo', 'Estoque', 'Categoria', 'Imagem Principal', 'Cor', 'Tamanho', 'Qtd Variante', 'Ativo'];
+            const rows = [];
+
+            products.forEach(p => {
+                const catName = categories.find(c => c.id === p.category)?.name || p.category || '';
+                const mainImage = p.image || '';
+                const variants = p.variants || [];
+
+                if (variants.length > 0) {
+                    // Uma linha por variante
+                    variants.forEach(v => {
+                        rows.push([
+                            p.id,
+                            p.name,
+                            p.price,
+                            p.oldPrice || '',
+                            v.qty || 0,
+                            catName,
+                            v.image || mainImage,
+                            v.color || '',
+                            v.size || '',
+                            v.qty || 0,
+                            p.active ? 'Sim' : 'Não'
+                        ]);
+                    });
+                } else {
+                    // Produto sem variantes
+                    rows.push([
+                        p.id,
+                        p.name,
+                        p.price,
+                        p.oldPrice || '',
+                        p.stock || 0,
+                        catName,
+                        mainImage,
+                        '',
+                        '',
+                        p.stock || 0,
+                        p.active ? 'Sim' : 'Não'
+                    ]);
+                }
+            });
+
+            // Montar CSV
+            const escapeCsv = (val) => {
+                const str = String(val);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            };
+
+            let csv = '\uFEFF'; // BOM para Excel reconhecer UTF-8
+            csv += headers.map(escapeCsv).join(',') + '\n';
+            rows.forEach(row => {
+                csv += row.map(escapeCsv).join(',') + '\n';
+            });
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `produtos_imports_company_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`Planilha exportada! ${rows.length} registros.`);
         }
     </script>
     <datalist id="color-options">
