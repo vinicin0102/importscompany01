@@ -730,13 +730,21 @@
                 // Extrair tamanhos e cores únicos
                 const sizes = [...new Set(data.variants.map(v => v.size).filter(s => s))];
 
-                // Extrair cores únicas (mantendo o hex se existir)
+                // Extrair cores únicas (mantendo o hex e imagem se existir)
                 const uniqueColors = [];
                 const colorNames = new Set();
+
                 data.variants.forEach(v => {
-                    if (v.color && !colorNames.has(v.color.toLowerCase())) {
-                        colorNames.add(v.color.toLowerCase());
-                        uniqueColors.push({ name: v.color, hex: v.colorHex });
+                    const cName = v.color ? v.color.toLowerCase() : '';
+                    if (cName && !colorNames.has(cName)) {
+                        colorNames.add(cName);
+                        uniqueColors.push({ name: v.color, hex: v.colorHex, image: v.image });
+                    } else if (cName) {
+                        // Se a cor já existe, mas a variante atual tem imagem e a salva não, atualiza
+                        const existing = uniqueColors.find(u => u.name.toLowerCase() === cName);
+                        if (existing && !existing.image && v.image) {
+                            existing.image = v.image;
+                        }
                     }
                 });
 
@@ -762,6 +770,11 @@
                         const colorName = colorObj.name;
                         const colorHex = colorObj.hex;
 
+                        // Guardar imagem no dataset
+                        if (colorObj.image) {
+                            btn.dataset.image = colorObj.image;
+                        }
+
                         // Tentar adivinhar a cor CSS ou usar o hex salvo
                         const colorMap = {
                             'preto': '#000', 'branca': '#fff', 'branco': '#fff', 'azul': '#0000FF',
@@ -782,6 +795,20 @@
                         btn.onclick = () => {
                             selectColor(btn);
                             document.getElementById('selected-color-name').innerText = colorName;
+
+                            // NEW: Mudar imagem se tiver
+                            if (btn.dataset.image) {
+                                const mainImg = document.getElementById("modalImage");
+                                const zoomRes = document.getElementById("zoomResult");
+
+                                // Efeito fade
+                                mainImg.style.opacity = '0.5';
+                                setTimeout(() => {
+                                    mainImg.src = btn.dataset.image;
+                                    zoomRes.style.backgroundImage = `url('${btn.dataset.image}')`;
+                                    mainImg.style.opacity = '1';
+                                }, 150);
+                            }
                         };
                         colorContainer.appendChild(btn);
 

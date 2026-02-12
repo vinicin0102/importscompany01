@@ -1072,6 +1072,7 @@
                         <table class="variant-table" id="variant-table">
                             <thead>
                                 <tr>
+                                    <th>Foto</th>
                                     <th>Cor</th>
                                     <th>Tamanho</th>
                                     <th>Qtd</th>
@@ -1379,11 +1380,57 @@
             renderGallery();
         }
 
+        let _currentVariantTarget = null;
+
+        function pickVariantImage(element) {
+            _currentVariantTarget = element;
+            const modal = document.getElementById('variant-img-picker-modal');
+            const grid = document.getElementById('vip-grid');
+            const empty = document.getElementById('vip-empty');
+
+            grid.innerHTML = '';
+            if (!currentGallery || currentGallery.length === 0) {
+                empty.style.display = 'block';
+            } else {
+                empty.style.display = 'none';
+                currentGallery.forEach(img => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'aspect-ratio:1; cursor:pointer; border:2px solid transparent; border-radius:4px; overflow:hidden; background:#000;';
+                    div.innerHTML = `<img src="${img.startsWith('http') || img.startsWith('data:') ? img : '../' + img}" style="width:100%; height:100%; object-fit:cover;">`;
+                    div.onclick = () => {
+                        const targetImg = _currentVariantTarget.querySelector('.v-img-display');
+                        const targetVal = _currentVariantTarget.querySelector('.v-image');
+                        const targetIcon = _currentVariantTarget.querySelector('i');
+
+                        targetImg.src = img.startsWith('http') || img.startsWith('data:') ? img : '../' + img;
+                        targetImg.style.display = 'block';
+                        targetVal.value = img;
+                        if (targetIcon) targetIcon.style.display = 'none';
+
+                        document.getElementById('variant-img-picker-modal').classList.remove('active');
+                    };
+                    grid.appendChild(div);
+                });
+            }
+            modal.classList.add('active');
+        }
+
         // ====== VARIANTS MANAGEMENT ======
-        function addVariant(color = '', size = '', qty = 0, hex = '#000000') {
+        function addVariant(color = '', size = '', qty = 0, hex = '#000000', image = '') {
             const tbody = document.getElementById('variant-body');
             const row = document.createElement('tr');
+
+            // Resolve image display
+            const imgSrc = image ? (image.startsWith('http') || image.startsWith('data:') ? image : '../' + image) : '';
+
             row.innerHTML = `
+                <td>
+                    <div class="v-img-wrapper" style="width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; cursor: pointer; background: var(--bg-hover); position: relative; display: flex; align-items: center; justify-content: center;" onclick="pickVariantImage(this)" title="Escolher Foto">
+                        <img class="v-img-display" src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; display: ${image ? 'block' : 'none'};">
+                        <i class="fas fa-camera" style="font-size: 14px; color: var(--text-secondary); display: ${image ? 'none' : 'block'};"></i>
+                        <input type="hidden" class="v-image" value="${image}">
+                    </div>
+                </td>
                 <td>
                     <div style="display: flex; gap: 5px; align-items: center;">
                         <input type="color" class="v-hex" value="${hex || '#000000'}" style="width: 30px; height: 30px; padding: 0; border: none; cursor: pointer; border-radius: 4px;">
@@ -1427,7 +1474,7 @@
         function loadVariants(variants) {
             document.getElementById('variant-body').innerHTML = '';
             if (variants && variants.length > 0) {
-                variants.forEach(v => addVariant(v.color || '', v.size || '', v.qty || 0, v.colorHex || ''));
+                variants.forEach(v => addVariant(v.color || '', v.size || '', v.qty || 0, v.colorHex || '', v.image || ''));
             }
             updateVariantTotal();
         }
@@ -1440,8 +1487,10 @@
                 const colorHex = row.querySelector('.v-hex').value;
                 const size = row.querySelector('.v-size').value;
                 const qty = parseInt(row.querySelector('.v-qty').value) || 0;
+                const image = row.querySelector('.v-image').value;
+
                 if (color || size) {
-                    variants.push({ color, colorHex, size, qty });
+                    variants.push({ color, colorHex, size, qty, image });
                 }
             });
             return variants;
@@ -1539,6 +1588,24 @@
         <option value="Roxo">
         <option value="Amarelo">
     </datalist>
+    <div id="variant-img-picker-modal" class="modal-overlay" style="z-index: 10000;">
+        <div class="modal" style="width: 400px; max-width: 90vw;">
+            <div class="modal-header">
+                <h3>Escolher Imagem da Variante</h3>
+                <button class="modal-close"
+                    onclick="document.getElementById('variant-img-picker-modal').classList.remove('active')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="vip-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;">
+                </div>
+                <div id="vip-empty" style="text-align: center; color: #888; padding: 20px; display: none;">
+                    Nenhuma imagem na galeria. Adicione imagens ao produto primeiro.
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
