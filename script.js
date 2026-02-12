@@ -225,6 +225,31 @@ async function initBannerCarousel() {
         // Start Auto-play
         startCarousel();
 
+        // Touch support for swipe
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        track.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        track.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const threshold = 50;
+            if (touchEndX < touchStartX - threshold) {
+                moveSlide(1); // Swipe Left -> Next
+                startCarousel();
+            }
+            if (touchEndX > touchStartX + threshold) {
+                moveSlide(-1); // Swipe Right -> Prev
+                startCarousel();
+            }
+        }
+
     } catch (e) {
         console.warn('Banner loads failed', e);
     }
