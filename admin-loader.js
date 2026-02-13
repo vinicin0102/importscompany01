@@ -10,10 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadProductsFromAdmin() {
     try {
-        console.log('🔄 Buscando produtos do Admin...');
+        console.log('🔄 Buscando produtos do Admin em /api/products...');
         const response = await fetch('/api/products');
 
-        if (!response.ok) throw new Error('Falha na API');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Falha na API: ${response.status} - ${errorText}`);
+        }
 
         const products = await response.json();
         const activeProducts = products.filter(p => p.active);

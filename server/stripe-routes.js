@@ -8,15 +8,31 @@ const router = express.Router();
 // e.g. STRIPE_SECRET_KEY=sk_test_...
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-if (!stripeSecretKey) {
-    console.error("⚠️  STRIPE_SECRET_KEY is missing in .env! Stripe routes will fail.");
+// Validar se a chave é real e não o placeholder
+const isStripeEnabled = stripeSecretKey && !stripeSecretKey.includes('PLACEHOLDER');
+
+let stripe;
+if (isStripeEnabled) {
+    stripe = require('stripe')(stripeSecretKey, {
+        apiVersion: '2025-01-27.acacia',
+    });
+} else {
+    console.warn("⚠️  STRIPE_SECRET_KEY inválida ou ausente. Rotas do Stripe estarão desativadas.");
 }
 
-// Initialize Stripe with the requested API version
-const stripe = require('stripe')(stripeSecretKey, {
-    apiVersion: '2025-01-27.acacia', // Note: '2026-01-28.clover' requested by user might be a beta/private version. 
-    // If you have access to '2026-01-28.clover', uncomment the line below and comment this one. 
-    // apiVersion: '2026-01-28.clover', 
+// -----------------------------------------------------------------------------
+// ROUTES
+// -----------------------------------------------------------------------------
+
+// Middleware Check for Stripe Availability
+router.use((req, res, next) => {
+    if (!isStripeEnabled) {
+        return res.status(503).json({
+            error: 'Stripe Integration Disabled',
+            message: 'A chave de API do Stripe não foi configurada no servidor (Vercel/env).'
+        });
+    }
+    next();
 });
 
 // -----------------------------------------------------------------------------
