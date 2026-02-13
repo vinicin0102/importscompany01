@@ -223,6 +223,40 @@
 
             /* Esconder seção de categorias no mobile */
             /* #categories { display: none !important; }  REMOVIDO A PEDIDO DO CLIENTE */
+
+            /* Mobile Categories Optimization */
+            .categories-grid-home {
+                grid-template-columns: repeat(2, 1fr) !important;
+                /* 2 por linha */
+                gap: 15px !important;
+                margin-top: 20px !important;
+            }
+
+            .category-card {
+                padding: 15px 10px !important;
+                /* Padding reduzido */
+            }
+
+            .category-icon {
+                width: 50px !important;
+                /* Icone menor */
+                height: 50px !important;
+                font-size: 1.2rem !important;
+                margin-bottom: 10px !important;
+            }
+
+            .category-card h3 {
+                font-size: 0.9rem !important;
+                /* Fonte titulo menor */
+                margin-bottom: 5px !important;
+            }
+
+            .category-card p {
+                font-size: 0.75rem !important;
+                /* Fonte desc menor */
+                display: none;
+                /* Esconder descrição no mobile para economizar espaço */
+            }
         }
 
         /* Home Categories Grid */
