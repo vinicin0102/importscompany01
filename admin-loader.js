@@ -93,43 +93,25 @@ function renderProducts(products) {
             </div>
         `;
 
-        // Reatach Events (Modal, etc)
-        reattachEvents(card, product);
+        // Salvar dados completos no dataset para o Event Delegate ler
+        const modalData = {
+            img: imageSrc,
+            title: product.name,
+            price: priceFormatted,
+            oldPrice: oldPriceFormatted,
+            installment: `ou 12x de R$ ${installmentValue}`,
+            category: product.category || 'Oferta',
+            variants: product.variants || [],
+            yampi_token: product.yampi_token || null,
+            images: product.images || []
+        };
+
+        card.dataset.product = JSON.stringify(modalData);
 
         grid.appendChild(card);
     });
 }
-
-function reattachEvents(card, data) {
-    const btn = card.querySelector('.add-to-cart-btn');
-    const imgWrapper = card.querySelector('.product-image-wrapper');
-    const img = card.querySelector('img');
-
-    // Dados normalizados para o Modal
-    const modalData = {
-        img: img.src,
-        title: data.name,
-        price: parseFloat(data.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-        oldPrice: data.oldPrice ? parseFloat(data.oldPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
-        installment: `ou 12x de R$ ${(data.price / 12).toFixed(2).replace('.', ',')}`,
-        category: data.category || 'Oferta',
-        variants: data.variants || [],
-        yampi_token: data.yampi_token || null,
-        images: data.images || []
-    };
-
-    const openModalHandler = (e) => {
-        e.preventDefault();
-        if (typeof openProductModal === 'function') {
-            openProductModal(modalData);
-        } else {
-            console.error('Funçăo openProductModal nâo encontrada!');
-        }
-    };
-
-    btn.onclick = openModalHandler;
-    imgWrapper.onclick = openModalHandler;
-}
+// reattachEvents removido (agora usamos delegação)
 
 function applySettings(settings) {
     if (settings.siteName) document.title = settings.siteName;

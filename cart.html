@@ -141,9 +141,19 @@
             <div class="cart-summary">
                 <h3>Resumo do Pedido</h3>
                 <div class="summary-row">
-                    <span>Subtotal</span>
                     <span id="subtotal">R$ 0,00</span>
                 </div>
+
+                <div class="summary-row" style="flex-direction: column; gap: 10px;">
+                    <label style="font-size: 0.9rem;">Simular Frete (CEP):</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="cepInput" placeholder="00000-000" maxlength="9"
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; flex: 1;">
+                        <button id="btnStartCalc" onclick="simularFrete()"
+                            style="background: #1a2744; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer;">Calcular</button>
+                    </div>
+                </div>
+
                 <div class="summary-row">
                     <span>Frete</span>
                     <span id="frete-value" style="color: green;">Grátis a partir de R$ 999</span>
@@ -203,19 +213,40 @@
             const subtotalFormatted = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('subtotal').innerText = subtotalFormatted;
 
-            // Frete: Grátis acima de R$ 999
+            // Lógica de Frete: Simulação por CEP
             const freteEl = document.getElementById('frete-value');
-            if (total >= 999) {
-                freteEl.innerText = 'Grátis';
-                freteEl.style.color = 'green';
-                document.getElementById('total').innerText = subtotalFormatted;
-            } else {
-                const frete = 49.90;
-                const totalComFrete = total + frete;
-                freteEl.innerText = 'R$ 49,90';
-                freteEl.style.color = '#e74c3c';
-                document.getElementById('total').innerText = totalComFrete.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            }
+            const cepInput = document.getElementById('cepInput');
+            const btnCalc = document.getElementById('btnStartCalc'); // Botão Simular
+
+            window.simularFrete = () => {
+                const cep = cepInput.value.replace(/\D/g, '');
+                if (cep.length < 8) {
+                    alert('Por favor, digite um CEP válido.');
+                    return;
+                }
+
+                btnCalc.innerText = 'Calculando...';
+
+                setTimeout(() => {
+                    btnCalc.innerText = 'Calcular';
+
+                    if (total >= 999) {
+                        freteEl.innerText = 'Grátis';
+                        freteEl.style.color = 'green';
+                        document.getElementById('total').innerText = subtotalFormatted;
+                    } else {
+                        const frete = 49.90; // Valor fixo simulado
+                        const totalComFrete = total + frete;
+                        freteEl.innerText = 'R$ 49,90';
+                        freteEl.style.color = '#e74c3c';
+                        document.getElementById('total').innerText = totalComFrete.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    }
+                }, 1000); // Simulando delay de API
+            };
+
+            // Inicialmente mostra "A Calcular"
+            freteEl.innerText = 'A calcular';
+            freteEl.style.color = '#777';
         });
 
         function removeItem(index) {

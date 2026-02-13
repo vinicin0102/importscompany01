@@ -64,34 +64,20 @@ function initMobileMenu() {
    3. Carrinho Simples
    ======================================== */
 function initCart() {
+    // Legacy Code: Desativado pois agora usamos Event Delegation no index.html 
+    // para gerenciar cliques nos produtos (Static & Dynamic)
+
+    /*
     const buttons = document.querySelectorAll('.add-to-cart-btn');
     const countBadge = document.querySelector('.cart-count');
     let count = 0;
 
     buttons.forEach(btn => {
         btn.addEventListener('click', function () {
-            // Efeito visual
-            const originalContent = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-check"></i> Adicionado!';
-            this.style.background = '#28a745';
-            this.style.transform = 'scale(0.95)';
-
-            // Incrementar contador
-            count++;
-            if (countBadge) {
-                countBadge.textContent = count;
-                countBadge.classList.add('bump'); // Adicionar classe de animação se existir no CSS
-                setTimeout(() => countBadge.classList.remove('bump'), 300);
-            }
-
-            // Restaurar botão
-            setTimeout(() => {
-                this.innerHTML = originalContent;
-                this.style.background = '';
-                this.style.transform = '';
-            }, 2000);
+            // ... Visual Effect code ...
         });
     });
+    */
 }
 
 /* ========================================

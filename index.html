@@ -222,9 +222,7 @@
             }
 
             /* Esconder seção de categorias no mobile */
-            #categories {
-                display: none !important;
-            }
+            /* #categories { display: none !important; }  REMOVIDO A PEDIDO DO CLIENTE */
         }
 
         /* Home Categories Grid */
@@ -978,22 +976,53 @@
             return { x: x, y: y };
         }
 
-        // Ativar listeners nos cards de produto
-        document.querySelectorAll('.product-card').forEach(card => {
-            const btn = card.querySelector('.add-to-cart-btn');
-            const imgWrapper = card.querySelector('.product-image-wrapper');
+        // Delegated Event Listener para a Grid de Produtos (Corrige bugs de eventos perdidos)
+        document.querySelector('.products-grid').addEventListener('click', (e) => {
+            const card = e.target.closest('.product-card');
+            if (!card) return;
 
-            const getData = () => ({
-                img: card.querySelector('img').src,
-                title: card.querySelector('.product-title').innerText,
-                price: card.querySelector('.price-current').innerText,
-                oldPrice: card.querySelector('.price-old').innerText,
-                installment: card.querySelector('.installment').innerText,
-                category: card.querySelector('.product-category').innerText
-            });
+            const btn = e.target.closest('.add-to-cart-btn');
+            const imgWrapper = e.target.closest('.product-image-wrapper');
 
-            btn.onclick = (e) => { e.preventDefault(); openProductModal(getData()); };
-            imgWrapper.onclick = (e) => { e.preventDefault(); openProductModal(getData()); };
+            if (btn || imgWrapper) {
+                e.preventDefault();
+
+                // 1. Tenta pegar dados do atributo data-product (Vindo do Admin)
+                let data = null;
+                if (card.dataset.product) {
+                    try {
+                        data = JSON.parse(card.dataset.product);
+                    } catch (err) {
+                        console.error('Erro ao ler dados do produto:', err);
+                    }
+                }
+
+                // 2. Se não tiver (Produto Estático), faz o scrape do DOM
+                if (!data) {
+                    data = {
+                        img: card.querySelector('img').src,
+                        title: card.querySelector('.product-title').innerText,
+                        price: card.querySelector('.price-current').innerText,
+                        oldPrice: card.querySelector('.price-old') ? card.querySelector('.price-old').innerText : '',
+                        installment: card.querySelector('.installment') ? card.querySelector('.installment').innerText : '',
+                        category: card.querySelector('.product-category') ? card.querySelector('.product-category').innerText : 'Oferta'
+                    };
+                }
+
+                // 3. Abre o Modal
+                openProductModal(data);
+
+                // 4. Se for clique no botão, faz o efeito visual
+                if (btn) {
+                    const originalContent = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Abrindo...';
+                    btn.style.background = '#28a745';
+                    setTimeout(() => {
+                        btn.innerHTML = originalContent;
+                        btn.style.background = '';
+                    }, 1000);
+                }
+            }
         });
 
         // Carregar Categorias Dinamicamente
