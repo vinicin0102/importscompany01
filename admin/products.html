@@ -933,6 +933,93 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
+
+            /* Modal fullscreen no mobile */
+            /* Modal fullscreen no mobile css fix */
+            .modal-overlay {
+                padding: 0 !important;
+                align-items: flex-end;
+                /* Mobile sheet style preferred */
+            }
+
+            .modal {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                border-radius: 0;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .modal-header,
+            .modal-footer {
+                flex-shrink: 0;
+            }
+
+            .modal-body {
+                flex-grow: 1;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 16px !important;
+                min-height: 0;
+                /* Important for flex items */
+            }
+
+            /* Galeria mais touch-friendly */
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 8px;
+            }
+
+            .gallery-add {
+                min-height: 80px;
+                font-size: 0.85rem;
+            }
+
+            .gallery-add i {
+                font-size: 1.5rem;
+            }
+
+            /* Botões de ação das thumbs maiores para toque */
+            .gallery-thumb .thumb-star,
+            .gallery-thumb .thumb-remove {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+
+            /* Variant table scroll no mobile */
+            .variant-table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .variant-table thead,
+            .variant-table tbody {
+                display: table;
+                width: 100%;
+            }
+
+            /* Upload area mais acessível */
+            .upload-area {
+                min-height: 120px;
+                padding: 20px;
+            }
+
+            .page-header div {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .page-header .btn {
+                flex: 1;
+                justify-content: center;
+                font-size: 0.75rem;
+                padding: 10px 12px;
+            }
         }
     </style>
 </head>
@@ -1055,9 +1142,9 @@
                             <h4><i class="fas fa-images"></i> Imagens do Produto</h4>
                         </div>
                         <div class="gallery-grid" id="gallery-grid">
-                            <div class="gallery-add" onclick="document.getElementById('image-file').click()">
-                                <i class="fas fa-plus"></i>
-                                <span>Adicionar</span>
+                            <div class="gallery-add" onclick="triggerImageUpload()" style="min-height: 90px;">
+                                <i class="fas fa-camera"></i>
+                                <span>Toque para<br>adicionar foto</span>
                             </div>
                         </div>
                         <input type="file" id="image-file" accept="image/*" multiple
@@ -1286,13 +1373,14 @@
         }
 
         // ====== GALLERY & UPLOAD ======
+        // ====== GALLERY & UPLOAD ======
         function renderGallery() {
             const grid = document.getElementById('gallery-grid');
-            // Manter apenas o botão de adicionar
+            // Botão com clique direto
             grid.innerHTML = `
-                <div class="gallery-add" onclick="document.getElementById('image-file').click()">
-                    <i class="fas fa-plus"></i>
-                    <span>Adicionar</span>
+                <div class="gallery-add" onclick="document.getElementById('image-file').click()" style="min-height: 90px;">
+                    <i class="fas fa-camera"></i>
+                    <span>Toque para<br>adicionar foto</span>
                 </div>
             `;
 

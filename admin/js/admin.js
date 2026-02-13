@@ -118,6 +118,51 @@ function startCropperProcess(file, aspectRatio, callback) {
     let modal = document.getElementById('cropper-modal');
 
     if (!modal) {
+        // Inject mobile-friendly styles for cropper
+        if (!document.getElementById('cropper-mobile-css')) {
+            const style = document.createElement('style');
+            style.id = 'cropper-mobile-css';
+            style.textContent = `
+                #cropper-modal .modal.modal-lg {
+                    width: 95vw;
+                    max-width: 700px;
+                    max-height: 95vh;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+                #cropper-modal .modal-body {
+                    flex: 1;
+                    overflow: hidden;
+                }
+                @media (max-width: 768px) {
+                    #cropper-modal .modal.modal-lg {
+                        width: 100vw;
+                        max-width: 100vw;
+                        max-height: 100vh;
+                        height: 100vh;
+                        border-radius: 0;
+                        margin: 0;
+                    }
+                    #cropper-modal .modal-body {
+                        min-height: 0 !important;
+                        max-height: none !important;
+                        flex: 1;
+                    }
+                    #cropper-modal .modal-footer {
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        padding: 12px 16px;
+                    }
+                    #cropper-modal .modal-footer .btn {
+                        padding: 12px 16px;
+                        font-size: 0.9rem;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
         modal = document.createElement('div');
         modal.id = 'cropper-modal';
         modal.className = 'modal-overlay';
@@ -127,7 +172,7 @@ function startCropperProcess(file, aspectRatio, callback) {
                     <h2><i class="fas fa-crop-alt"></i> Ajustar Imagem</h2>
                     <button type="button" class="modal-close" id="cropper-close"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="modal-body" style="background: #111; display: flex; align-items: center; justify-content: center; min-height: 400px; max-height: 65vh; padding: 0;">
+                <div class="modal-body" style="background: #111; display: flex; align-items: center; justify-content: center; min-height: 250px; max-height: 60vh; padding: 0; touch-action: none;">
                     <img id="cropper-image" style="display: block; max-width: 100%;">
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
@@ -138,7 +183,7 @@ function startCropperProcess(file, aspectRatio, callback) {
                     <div>
                         <button type="button" class="btn btn-secondary" id="cropper-cancel">Cancelar</button>
                         <button type="button" class="btn btn-primary" id="cropper-confirm">
-                            <i class="fas fa-check"></i> Confirmar Recorte
+                            <i class="fas fa-check"></i> Confirmar
                         </button>
                     </div>
                 </div>
@@ -164,11 +209,12 @@ function startCropperProcess(file, aspectRatio, callback) {
             window.cropper.destroy();
         }
 
+        const isMobile = window.innerWidth <= 768;
         window.cropper = new Cropper(imageElement, {
             aspectRatio: aspectRatio,
             viewMode: 1,
             dragMode: 'move',
-            autoCropArea: 0.8,
+            autoCropArea: isMobile ? 0.9 : 0.8,
             restore: false,
             guides: true,
             center: true,
@@ -176,6 +222,10 @@ function startCropperProcess(file, aspectRatio, callback) {
             cropBoxMovable: true,
             cropBoxResizable: true,
             toggleDragModeOnDblclick: false,
+            minContainerWidth: 200,
+            minContainerHeight: 200,
+            responsive: true,
+            checkCrossOrigin: false,
         });
 
         document.getElementById('cropper-confirm').onclick = () => {

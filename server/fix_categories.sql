@@ -14,4 +14,6 @@ INSERT INTO categories (id, name, icon, "order", active, description) VALUES
 ('bolsas', 'Bolsas', 'fa-bag-shopping', 5, TRUE, 'Estilo e elegância'),
 ('tenis', 'Tênis', 'fa-shoe-prints', 6, TRUE, 'Conforto para os pés'),
 ('oculos', 'Óculos', 'fa-glasses', 7, TRUE, 'Visão com estilo'),
-('cosmeticos', 'Cosméticos', 'fa-wand-magic-sparkles', 8, TRUE, 'Beleza realçada');
+('cosmeticos', 'Cosméticos', 'fa-wand-magic-sparkles', 8, TRUE, 'Beleza realçada'),
+('moda-masculina', 'Moda Masculina', 'fa-shirt', 9, TRUE, 'Elegância Moderna'),
+('moda-feminina', 'Moda Feminina', 'fa-person-dress', 10, TRUE, 'Tendências Globais');
