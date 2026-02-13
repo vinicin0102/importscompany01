@@ -144,14 +144,37 @@
                     <span id="subtotal">R$ 0,00</span>
                 </div>
 
-                <div class="summary-row" style="flex-direction: column; gap: 10px;">
-                    <label style="font-size: 0.9rem;">Simular Frete (CEP):</label>
+                <div class="summary-row"
+                    style="flex-direction: column; gap: 10px; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                    <h4 style="margin: 0; color: #1a2744; font-size: 1rem;">Endereço de Entrega</h4>
+
                     <div style="display: flex; gap: 5px;">
-                        <input type="text" id="cepInput" placeholder="00000-000" maxlength="9"
-                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; flex: 1;">
+                        <input type="text" id="cepInput" placeholder="CEP" maxlength="9" class="form-input"
+                            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                            onblur="simularFrete()">
                         <button id="btnStartCalc" onclick="simularFrete()"
-                            style="background: #1a2744; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer;">Calcular</button>
+                            style="background: #1a2744; color: white; border: none; padding: 0 10px; border-radius: 4px; font-size: 0.8rem;">OK</button>
                     </div>
+
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="inputRua" placeholder="Rua"
+                            style="flex: 2; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="text" id="inputNum" placeholder="Nº"
+                            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+
+                    <input type="text" id="inputBairro" placeholder="Bairro"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="inputCidade" placeholder="Cidade"
+                            style="flex: 2; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="text" id="inputEstado" placeholder="UF" maxlength="2"
+                            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+
+                    <input type="text" id="inputComp" placeholder="Complemento (Opcional)"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                 </div>
 
                 <div class="summary-row">
@@ -260,6 +283,18 @@
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             if (cart.length === 0) return alert('Seu carrinho está vazio!');
 
+            // Validação de Endereço (Obrigatório apenas param WhatsApp, mas bom ter)
+            const rua = document.getElementById('inputRua').value;
+            const num = document.getElementById('inputNum').value;
+            const bairro = document.getElementById('inputBairro').value;
+            const cidade = document.getElementById('inputCidade').value;
+            const estado = document.getElementById('inputEstado').value;
+            const cep = document.getElementById('cepInput').value;
+
+            if (!rua || !num || !bairro || !cidade || !estado || !cep) {
+                return alert('Por favor, preencha o endereço completo de entrega.');
+            }
+
             // Filtra produtos que possuem Token da Yampi
             const yampiItems = cart.filter(item => item.yampi_token).map(item => {
                 const qty = item.quantity || 1;
@@ -267,17 +302,24 @@
             });
 
             if (yampiItems.length > 0) {
-                // Monta o link da Yampi: https://checkout.yampi.com.br/r/TOKEN:QTD,TOKEN:QTD
+                // Monta o link da Yampi
                 const yampiLink = `https://checkout.yampi.com.br/r/${yampiItems.join(',')}`;
 
-                alert('Redirecionando para o Pagamento Seguro da Yampi...');
+                alert('Redirecionando para o Pagamento Seguro...');
                 window.location.href = yampiLink;
             } else {
-                // Fallback caso não tenha tokens cadastrados
+                // Fallback WhatsApp com Endereço
                 alert('Estamos finalizando sua compra via WhatsApp...');
-                const productNames = cart.map(item => `- ${item.title} (${item.size})`).join('%0A');
+
+                const productNames = cart.map(item => `- ${item.title} (${item.size}, ${item.color})`).join('%0A');
                 const totalText = document.getElementById('total').innerText;
-                const text = `Olá! Gostaria de finalizar o pedido desses produtos:%0A${productNames}%0ATotal: ${totalText}`;
+                const freteText = document.getElementById('frete-value').innerText;
+
+                const comp = document.getElementById('inputComp').value;
+                const addressText = `*Endereço de Entrega:*%0A${rua}, ${num} ${comp ? '- ' + comp : ''}%0A${bairro} - ${cep}%0A${cidade}/${estado}`;
+
+                const text = `Olá! Gostaria de finalizar o pedido:%0A%0A${productNames}%0A%0A*Frete:* ${freteText}%0A*Total:* ${totalText}%0A%0A${addressText}`;
+
                 window.location.href = `https://wa.me/5511999999999?text=${text}`;
             }
         }
