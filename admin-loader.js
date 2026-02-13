@@ -132,6 +132,7 @@ function applySettings(settings) {
     }
 
     // Layout de Categorias (Quantidade por linha)
+    /*
     if (settings.categoryLayout) {
         dynamicStyles += `
             .categories-grid-home {
@@ -149,6 +150,7 @@ function applySettings(settings) {
             }
         `;
     }
+    */
 
     if (dynamicStyles) {
         const styleSheet = document.createElement("style");
