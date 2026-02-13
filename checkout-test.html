@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Teste de Checkout Stripe</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 40px;
+        }
+
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Diagnóstico de Checkout Stripe</h1>
+    <p>Clique no botão abaixo para testar a comunicação com o servidor e criar uma sessão de pagamento.</p>
+
+    <button onclick="testCheckout()" style="padding: 15px 30px; font-size: 1.2rem; cursor: pointer;">Testar Checkout
+        Agora</button>
+
+    <div id="log" class="log">Aguardando teste...</div>
+
+    <script>
+        async function testCheckout() {
+            const logEl = document.getElementById('log');
+            logEl.textContent = 'Iniciando teste...\n';
+            logEl.className = 'log';
+
+            try {
+                // 1. Dados simulados do carrinho
+                const mockCart = [
+                    {
+                        title: "Produto de Teste (Debug)",
+                        price: "R$ 50,00",
+                        quantity: 1,
+                        size: "M",
+                        color: "Azul"
+                    }
+                ];
+
+                logEl.textContent += '1. Enviando dados simulados para /api/connect/platform-checkout...\n';
+                logEl.textContent += JSON.stringify({ items: mockCart }, null, 2) + '\n\n';
+
+                const response = await fetch('/api/connect/platform-checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: mockCart })
+                });
+
+                logEl.textContent += `2. Status da Resposta: ${response.status} ${response.statusText}\n`;
+
+                const text = await response.text();
+                logEl.textContent += `3. Corpo da Resposta:\n${text}\n\n`;
+
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+                const data = JSON.parse(text);
+
+                if (data.url) {
+                    logEl.textContent += '✅ SUCESSO TOTAL! URL de pagamento recebida.\n';
+                    logEl.className = 'log success';
+
+                    // Opcional: Redirecionar
+                    if (confirm('Checkout criado com sucesso! Deseja ser redirecionado para o Stripe agora?')) {
+                        window.location.href = data.url;
+                    }
+                } else {
+                    throw new Error('Resposta não contém URL de redirecionamento.');
+                }
+
+            } catch (err) {
+                console.error(err);
+                logEl.textContent += `❌ ERRO FATAL: ${err.message}\n`;
+                logEl.className = 'log error';
+            }
+        }
+    </script>
+</body>
+
+</html>

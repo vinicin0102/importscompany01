@@ -434,6 +434,7 @@ app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
 // =============================================
 // STRIPE CONNECT DEMO ROUTES
 // =============================================
+console.log('💳 Carregando rotas do Stripe em /api/connect...');
 const stripeRoutes = require('./stripe-routes');
 app.use('/api/connect', stripeRoutes);
 
