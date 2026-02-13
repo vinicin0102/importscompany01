@@ -432,6 +432,17 @@ app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
 });
 
 // =============================================
+// STRIPE SAMPLES (Basic Checkout)
+// =============================================
+// Support for public/checkout.html (pasted by user)
+try {
+    const basicCheckout = require('./basic-checkout');
+    app.use('/', basicCheckout);
+} catch (e) {
+    console.warn("⚠️  Basic Checkout module error:", e.message);
+}
+
+// =============================================
 // STRIPE CONNECT DEMO ROUTES
 // =============================================
 console.log('💳 Carregando rotas do Stripe em /api/connect...');

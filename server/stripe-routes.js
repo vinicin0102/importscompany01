@@ -1,65 +1,88 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 
 // -----------------------------------------------------------------------------
-// STRIPE CONFIGURATION
+// 1. SETUP & CONFIGURATION
 // -----------------------------------------------------------------------------
-// Placeholder for API Key. Replace with your actual key in .env
-// e.g. STRIPE_SECRET_KEY=sk_test_...
+
+// Load environment variables
+require('dotenv').config();
+
+// Initialize Stripe Client
+// Using the latest SDK version as requested with specific API version "2026-01-28.clover"
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-// Validar se a chave é real e não o placeholder
-const isStripeEnabled = stripeSecretKey && !stripeSecretKey.includes('PLACEHOLDER');
-
-let stripe;
-if (isStripeEnabled) {
-    stripe = require('stripe')(stripeSecretKey, {
-        apiVersion: '2026-01-28.preview', // Versão específica (pode ser beta/preview)
-    });
-} else {
-    console.warn("⚠️  STRIPE_SECRET_KEY inválida ou ausente. Rotas do Stripe estarão desativadas.");
+if (!stripeSecretKey) {
+    console.error("❌ ERROR: STRIPE_SECRET_KEY is missing in .env file.");
+    process.exit(1);
 }
 
-// -----------------------------------------------------------------------------
-// ROUTES
-// -----------------------------------------------------------------------------
-
-// Middleware Check for Stripe Availability
-router.use((req, res, next) => {
-    if (!isStripeEnabled) {
-        return res.status(503).json({
-            error: 'Stripe Integration Disabled',
-            message: 'A chave de API do Stripe não foi configurada no servidor (Vercel/env).'
-        });
-    }
-    next();
+const stripe = require('stripe')(stripeSecretKey, {
+    apiVersion: '2026-01-28.clover' // Specific preview version requested
 });
 
+// Create data directory if it doesn't exist to store sample data
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir);
+}
+
+// Helper to read/write JSON files (Simulating DB)
+const ACCOUNTS_FILE = path.join(dataDir, 'connected_accounts.json');
+const PROJECTS_FILE = path.join(dataDir, 'platform_products.json');
+
+const readData = (file) => {
+    if (!fs.existsSync(file)) return [];
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+};
+
+const writeData = (file, data) => {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+};
+
 // -----------------------------------------------------------------------------
-// ROUTES
+// 2. CONNECTED ACCOUNTS (V2 API)
 // -----------------------------------------------------------------------------
 
-/**
- * 1. Create a Connected Account
- * POST /api/stripe/account
- */
+// POST /api/connect/account
+// Creates a Stripe Connected Account using V2 API
 router.post('/account', async (req, res) => {
     try {
-        if (!stripeSecretKey) throw new Error('Stripe API Key is missing.');
+        const { email, name } = req.body;
+        if (!email || !name) return res.status(400).json({ error: 'Email and Name are required.' });
 
-        const account = await stripe.accounts.create({
-            controller: {
-                fees: {
-                    payer: 'account'
+        // Create account via V2 API
+        const account = await stripe.v2.core.accounts.create({
+            display_name: name,
+            contact_email: email,
+            identity: {
+                country: 'us', // Default to US for sample, or pass from body
+            },
+            dashboard: 'express',
+            defaults: {
+                responsibilities: {
+                    fees_collector: 'application',
+                    losses_collector: 'application',
                 },
-                losses: {
-                    payments: 'stripe'
+            },
+            configuration: {
+                recipient: {
+                    capabilities: {
+                        stripe_balance: {
+                            stripe_transfers: {
+                                requested: true,
+                            },
+                        },
+                    },
                 },
-                stripe_dashboard: {
-                    type: 'full'
-                }
-            }
+            },
         });
+
+        // Store mapping: User (Email) -> Account ID
+        const accounts = readData(ACCOUNTS_FILE);
+        accounts.push({ email, name, accountId: account.id, created: new Date() });
+        writeData(ACCOUNTS_FILE, accounts);
 
         res.json({ account: account.id });
     } catch (error) {
@@ -68,21 +91,39 @@ router.post('/account', async (req, res) => {
     }
 });
 
-/**
- * 2. Onboard Connected Account (Account Link)
- * POST /api/stripe/account_link
- * Body: { accountId: 'acct_...' }
- */
-router.post('/account_link', async (req, res) => {
+// GET /api/connect/accounts
+// Lists all created connected accounts (from local storage)
+router.get('/accounts', (req, res) => {
+    try {
+        const accounts = readData(ACCOUNTS_FILE);
+        res.json(accounts);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// -----------------------------------------------------------------------------
+// 3. ONBOARDING (V2 API)
+// -----------------------------------------------------------------------------
+
+// POST /api/connect/onboard
+// Generates an account link for onboarding
+router.post('/onboard', async (req, res) => {
     try {
         const { accountId } = req.body;
-        if (!accountId) return res.status(400).json({ error: 'Missing accountId' });
+        if (!accountId) return res.status(400).json({ error: 'Account ID is required.' });
 
-        const accountLink = await stripe.accountLinks.create({
+        const accountLink = await stripe.v2.core.accountLinks.create({
             account: accountId,
-            refresh_url: `${req.protocol}://${req.get('host')}/stripe-connect.html`,
-            return_url: `${req.protocol}://${req.get('host')}/stripe-connect.html`,
-            type: 'account_onboarding',
+            use_case: {
+                type: 'account_onboarding',
+                account_onboarding: {
+                    // Start collecting requirements for transfers
+                    configurations: ['recipient'],
+                    refresh_url: `${req.protocol}://${req.get('host')}/stripe-connect.html`,
+                    return_url: `${req.protocol}://${req.get('host')}/stripe-connect.html?accountId=${accountId}`,
+                },
+            },
         });
 
         res.json({ url: accountLink.url });
@@ -92,87 +133,155 @@ router.post('/account_link', async (req, res) => {
     }
 });
 
-/**
- * 3. Retrieve Account Status
- * GET /api/stripe/account/:id
- */
-router.get('/account/:id', async (req, res) => {
+// GET /api/connect/status/:accountId
+// Checks the onboarding status of a connected account via API
+router.get('/status/:accountId', async (req, res) => {
     try {
-        const account = await stripe.accounts.retrieve(req.params.id);
+        const { accountId } = req.params;
+
+        // Retrieve account details via V2/Core API
+        const account = await stripe.v2.core.accounts.retrieve(accountId, {
+            include: ["configuration.recipient", "requirements"],
+        });
+
+        const readyToReceivePayments = account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status === "active";
+
+        // Check requirements status
+        const requirementsStatus = account.requirements?.summary?.minimum_deadline?.status;
+        // Logic from prompt: considered complete if not currently_due or past_due
+        const onboardingComplete = requirementsStatus !== "currently_due" && requirementsStatus !== "past_due";
+
         res.json({
-            id: account.id,
-            details_submitted: account.details_submitted,
-            payouts_enabled: account.payouts_enabled,
-            charges_enabled: account.charges_enabled
+            readyToReceivePayments,
+            onboardingComplete,
+            details: account
         });
     } catch (error) {
+        console.error('Error getting status:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-/**
- * 4. Create Product on Connected Account
- * POST /api/stripe/product
- * Body: { accountId, name, description, priceInCents, currency }
- */
+
+// -----------------------------------------------------------------------------
+// 4. WEBHOOKS (THIN EVENTS)
+// -----------------------------------------------------------------------------
+
+// POST /api/connect/webhook
+// Listens for V2 thin events
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET; // Placeholder in .env needed
+
+    if (!webhookSecret) {
+        console.warn('⚠️  STRIPE_WEBHOOK_SECRET is missing. Webhooks will not be verified.');
+        return res.sendStatus(200);
+    }
+
+    let thinEvent;
+    try {
+        // Parse the thin event
+        // Note: SDK usually handles body parsing. Assuming req.body is available.
+        // If express.json() is global, req.body is object. stripe.parseThinEvent needs string payload or object?
+        // Checking SDK docs via implementation pattern: client.parseThinEvent(req.body, sig, secret)
+        thinEvent = stripe.parseThinEvent(req.body, sig, webhookSecret);
+    } catch (err) {
+        console.error(`Webhook Error: ${err.message}`);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    try {
+        if (thinEvent.type === 'v2.core.account.updated' || thinEvent.type === 'v2.core.account.requirements.updated') {
+            // Fetch full event details
+            const event = await stripe.v2.core.events.retrieve(thinEvent.id);
+            console.log('🔔 Received Event:', event.type);
+            console.log('   Data:', JSON.stringify(event.data, null, 2));
+
+            // Implement logic to update local DB status if needed
+        }
+
+        res.json({ received: true });
+    } catch (err) {
+        console.error('Error handling event:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// -----------------------------------------------------------------------------
+// 5. PRODUCTS (PLATFORM LEVEL)
+// -----------------------------------------------------------------------------
+
+// POST /api/connect/product
+// Creates a product on the Platform account, mapping it to a connected account
 router.post('/product', async (req, res) => {
     try {
-        const { accountId, name, description, priceInCents, currency } = req.body;
+        const { name, description, price, currency, connectedAccountId } = req.body;
 
-        if (!accountId) return res.status(400).json({ error: 'Missing accountId' });
+        if (!name || !price || !connectedAccountId) {
+            return res.status(400).json({ error: 'Name, Price and Connected Account ID are required.' });
+        }
 
+        // Create product on Platform
         const product = await stripe.products.create({
             name: name,
-            description: description,
+            description: description || 'Platform Product',
             default_price_data: {
-                unit_amount: priceInCents,
-                currency: currency || 'brl',
+                unit_amount: Math.round(parseFloat(price) * 100), // Convert to cents
+                currency: currency || 'usd', // Default to USD
             },
-        }, {
-            stripeAccount: accountId, // Header for Connected Account
+            metadata: {
+                connected_account_id: connectedAccountId // Store mapping in metadata
+            }
         });
 
-        res.json(product);
+        // Store persistent mapping in JSON file
+        const products = readData(PROJECTS_FILE);
+        products.push({
+            id: product.id,
+            priceId: product.default_price,
+            name,
+            price,
+            connectedAccountId,
+            created: new Date()
+        });
+        writeData(PROJECTS_FILE, products);
+
+        res.json({ product });
     } catch (error) {
         console.error('Error creating product:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-/**
- * 5. List Products for Connected Account
- * GET /api/stripe/products/:accountId
- */
-router.get('/products/:accountId', async (req, res) => {
+// GET /api/connect/products
+// Lists available platform products
+router.get('/products', (req, res) => {
     try {
-        const { accountId } = req.params;
-
-        const products = await stripe.products.list({
-            limit: 10,
-            active: true,
-            expand: ['data.default_price'], // To get price details
-        }, {
-            stripeAccount: accountId,
-        });
-
-        res.json(products.data);
+        const products = readData(PROJECTS_FILE);
+        res.json(products);
     } catch (error) {
-        console.error('Error listing products:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-/**
- * 6. Process Charge (Checkout Session)
- * POST /api/stripe/checkout
- * Body: { accountId, priceId, quantity }
- */
+
+// -----------------------------------------------------------------------------
+// 6. CHECKOUT (DESTINATION CHARGES)
+// -----------------------------------------------------------------------------
+
+// POST /api/connect/checkout
+// Creates a checkout session sending funds to the connected account
 router.post('/checkout', async (req, res) => {
     try {
-        const { accountId, priceId, quantity } = req.body;
+        const { priceId, quantity, connectedAccountId } = req.body;
 
-        if (!accountId || !priceId) return res.status(400).json({ error: 'Missing parameters' });
+        if (!priceId || !connectedAccountId) {
+            return res.status(400).json({ error: 'Price ID and Connected Account ID are required.' });
+        }
 
+        // Create Session with Destination Charge
         const session = await stripe.checkout.sessions.create({
             line_items: [
                 {
@@ -181,77 +290,19 @@ router.post('/checkout', async (req, res) => {
                 },
             ],
             payment_intent_data: {
-                application_fee_amount: 123, // Sample Application Fee (e.g., $1.23 or R$ 1,23)
+                application_fee_amount: 1000, // $10.00 fee (sample)
+                transfer_data: {
+                    destination: connectedAccountId,
+                },
             },
             mode: 'payment',
-            success_url: `${req.protocol}://${req.get('host')}/stripe-storefront.html?accountId=${accountId}&success=true`,
-            cancel_url: `${req.protocol}://${req.get('host')}/stripe-storefront.html?accountId=${accountId}&canceled=true`,
-        }, {
-            stripeAccount: accountId,
+            success_url: `${req.protocol}://${req.get('host')}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${req.protocol}://${req.get('host')}/stripe-storefront.html`,
         });
 
         res.json({ url: session.url });
     } catch (error) {
         console.error('Error creating checkout:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
- * 7. Platform Checkout (Direct Sale)
- * POST /api/stripe/platform-checkout
- * Body: { items: [{ title, price, quantity }] }
- */
-router.post('/platform-checkout', async (req, res) => {
-    try {
-        const { items } = req.body;
-        if (!items || items.length === 0) return res.status(400).json({ error: 'No items provided' });
-
-        // Helper to parse "R$ 1.200,50" -> 120050
-        const parsePrice = (priceStr) => {
-            if (typeof priceStr === 'number') return priceStr;
-            return Math.round(parseFloat(priceStr.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
-        };
-
-        const line_items = items.map(item => ({
-            price_data: {
-                currency: 'brl',
-                product_data: {
-                    name: item.title,
-                    description: item.size ? `Tamanho: ${item.size} | Cor: ${item.color}` : undefined,
-                    // images: item.img ? [item.img] : undefined, // Images must be publicly accessible URLs
-                },
-                unit_amount: parsePrice(item.price),
-            },
-            quantity: item.quantity || 1,
-        }));
-
-        const session = await stripe.checkout.sessions.create({
-            line_items,
-            mode: 'payment',
-            success_url: `${req.protocol}://${req.get('host')}/success.html`,
-            cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
-            shipping_address_collection: {
-                allowed_countries: ['BR'], // Limita entrega ao Brasil
-            },
-            phone_number_collection: {
-                enabled: true, // Coleta telefone do cliente para contato
-            },
-            branding_settings: {
-                display_name: 'Imports Company', // Nome da sua loja
-                font_family: 'roboto',
-                border_style: 'rectangular',
-                background_color: '#7D8CC4', // Cor enviada no exemplo
-                button_color: '#A0D2DB',     // Cor enviada no exemplo
-                // Para usar logo/ícone, você precisa subir a imagem no Stripe e pegar o ID (file_...)
-                // icon: { type: 'file', file: 'file_ID_AQUI' },
-                // logo: { type: 'file', file: 'file_ID_AQUI' },
-            },
-        });
-
-        res.json({ url: session.url });
-    } catch (error) {
-        console.error('Platform Checkout Error:', error);
         res.status(500).json({ error: error.message });
     }
 });
