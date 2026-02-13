@@ -431,6 +431,12 @@ app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
     }
 });
 
+// =============================================
+// STRIPE CONNECT DEMO ROUTES
+// =============================================
+const stripeRoutes = require('./stripe-routes');
+app.use('/api/connect', stripeRoutes);
+
 // Global Error Handler
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {

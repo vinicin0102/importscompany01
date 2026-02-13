@@ -279,48 +279,58 @@
             location.reload();
         }
 
-        function checkoutFinal() {
+        async function checkoutFinal() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             if (cart.length === 0) return alert('Seu carrinho está vazio!');
 
-            // Validação de Endereço (Obrigatório apenas param WhatsApp, mas bom ter)
             const rua = document.getElementById('inputRua').value;
             const num = document.getElementById('inputNum').value;
-            const bairro = document.getElementById('inputBairro').value;
-            const cidade = document.getElementById('inputCidade').value;
-            const estado = document.getElementById('inputEstado').value;
             const cep = document.getElementById('cepInput').value;
 
-            if (!rua || !num || !bairro || !cidade || !estado || !cep) {
-                return alert('Por favor, preencha o endereço completo de entrega.');
+            if (!rua || !num || !cep) {
+                return alert('Por favor, preencha pelo menos CEP, Rua e Número.');
             }
 
-            // Filtra produtos que possuem Token da Yampi
-            const yampiItems = cart.filter(item => item.yampi_token).map(item => {
-                const qty = item.quantity || 1;
-                return `${item.yampi_token}:${qty}`;
-            });
+            const btn = document.querySelector('.checkout-btn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Processando...';
+            btn.disabled = true;
 
-            if (yampiItems.length > 0) {
-                // Monta o link da Yampi
-                const yampiLink = `https://checkout.yampi.com.br/r/${yampiItems.join(',')}`;
+            try {
+                // 1. Prioridade: Yampi (Se tiver token)
+                const yampiItems = cart.filter(item => item.yampi_token);
+                if (yampiItems.length > 0) {
+                    const params = yampiItems.map(item => `${item.yampi_token}:${item.quantity || 1}`).join(',');
+                    window.location.href = `https://checkout.yampi.com.br/r/${params}`;
+                    return;
+                }
 
-                alert('Redirecionando para o Pagamento Seguro...');
-                window.location.href = yampiLink;
-            } else {
-                // Fallback WhatsApp com Endereço
-                alert('Estamos finalizando sua compra via WhatsApp...');
+                // 2. Stripe Checkout (Plataforma)
+                const response = await fetch('/api/connect/platform-checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: cart })
+                });
 
-                const productNames = cart.map(item => `- ${item.title} (${item.size}, ${item.color})`).join('%0A');
-                const totalText = document.getElementById('total').innerText;
-                const freteText = document.getElementById('frete-value').innerText;
+                const data = await response.json();
 
-                const comp = document.getElementById('inputComp').value;
-                const addressText = `*Endereço de Entrega:*%0A${rua}, ${num} ${comp ? '- ' + comp : ''}%0A${bairro} - ${cep}%0A${cidade}/${estado}`;
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error(data.error || 'Erro no Stripe');
+                }
 
-                const text = `Olá! Gostaria de finalizar o pedido:%0A%0A${productNames}%0A%0A*Frete:* ${freteText}%0A*Total:* ${totalText}%0A%0A${addressText}`;
-
+            } catch (err) {
+                console.error(err);
+                // 3. Fallback: WhatsApp
+                alert('Erro na integração. Redirecionando para WhatsApp...');
+                const productNames = cart.map(item => `- ${item.title}`).join('%0A');
+                const total = document.getElementById('total').innerText;
+                const text = `Pedido (Erro Site):%0A${productNames}%0ATotal: ${total}`;
                 window.location.href = `https://wa.me/5511999999999?text=${text}`;
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
     </script>

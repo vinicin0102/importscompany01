@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Storefront | Imports Company</title>
+    <!-- Use existing styles if available, or fallback -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fa;
+            color: #1a2744;
+            margin: 0;
+        }
+
+        header {
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        header span {
+            color: #c5a059;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h2 {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .img-placeholder {
+            height: 200px;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 2rem;
+        }
+
+        .details {
+            padding: 20px;
+        }
+
+        .price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a2744;
+            margin: 10px 0;
+        }
+
+        button {
+            background: #1a2744;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #c5a059;
+            color: black;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <span>Seller Storefront</span>
+            <h1>Imports Company Marketplace</h1>
+        </div>
+        <div style="font-size: 0.9rem; opacity: 0.8;">
+            Powered by Stripe Connect
+        </div>
+    </header>
+
+    <div class="container">
+        <h2 id="storeTitle">Loading Store...</h2>
+        <div id="productsGrid" class="grid"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/connect';
+
+        // 1. Get Account ID from URL
+        const params = new URLSearchParams(window.location.search);
+        const accountId = params.get('accountId');
+
+        if (!accountId) {
+            document.body.innerHTML = '<div class="empty-state"><h1>Store Not Found</h1><p>Missing Account ID in URL. Please go back to the dashboard.</p></div>';
+        } else {
+            document.getElementById('storeTitle').textContent = `Store for Account: ${accountId}`;
+            loadProducts();
+        }
+
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_BASE}/products/${accountId}`);
+                const products = await res.json();
+
+                const grid = document.getElementById('productsGrid');
+                grid.innerHTML = '';
+
+                if (products.length === 0) {
+                    grid.innerHTML = '<p class="empty-state" style="grid-column: 1/-1;">No products found for this seller.</p>';
+                    return;
+                }
+
+                products.forEach(p => {
+                    const price = p.default_price;
+                    const priceFormatted = (price.unit_amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: price.currency.toUpperCase() });
+
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                    <div class="img-placeholder"><i class="fas fa-box"></i></div>
+                    <div class="details">
+                        <h3 style="margin: 0 0 10px 0;">${p.name}</h3>
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px;">${p.description || 'No description'}</p>
+                        <div class="price">${priceFormatted}</div>
+                        <button onclick="buyProduct('${p.default_price.id}')">Buy Now</button>
+                    </div>
+                `;
+                    grid.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error(err);
+                alert('Failed to load products');
+            }
+        }
+
+        async function buyProduct(priceId) {
+            try {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Processing...';
+
+                const res = await fetch(`${API_BASE}/checkout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: accountId,
+                        priceId: priceId,
+                        quantity: 1
+                    })
+                });
+                const data = await res.json();
+
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert('Checkout failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+    </script>
+
+    <!-- Font Awesome for icon placeholder -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+</body>
+
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Connect | Platform Dashboard</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f6f8;
+            color: #333;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #1a2744;
+        }
+
+        h2 {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #635bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #4b42d8;
+        }
+
+        button.secondary {
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #f9f9f9;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .status-good {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warn {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Stripe Connect Demo</h1>
+        <p>Use this dashboard to create connected accounts (sellers), onboard them, and manage their products.</p>
+
+        <!-- 1. Create Account -->
+        <div class="section">
+            <h2>1. Create Connected Account</h2>
+            <p style="font-size: 0.9rem; color: #666;">This creates a standard Stripe Express account for a seller.</p>
+            <button onclick="createAccount()">Create New Account</button>
+            <div id="createAccountResult" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- 2. Manage Existing Account -->
+        <div class="section">
+            <h2>2. Manage Account</h2>
+            <label>Account ID (e.g. acct_123...)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="accountId" placeholder="Enter account ID">
+                <button class="secondary" onclick="checkStatus()">Check Status</button>
+            </div>
+            <div id="statusResult" class="result-box" style="display:none;"></div>
+
+            <div style="margin-top: 15px;">
+                <button onclick="startOnboarding()">Start Onboarding (Get Link)</button>
+                <a id="onboardingLink" href="#" target="_blank"
+                    style="display:none; margin-left: 15px; color: #635bff; text-decoration: none; font-weight: 600;">Open
+                    Onboarding Page &rarr;</a>
+            </div>
+        </div>
+
+        <!-- 3. Create Product -->
+        <div class="section">
+            <h2>3. Create Product</h2>
+            <div class="grid">
+                <div>
+                    <label>Product Name</label>
+                    <input type="text" id="prodName" placeholder="T-Shirt">
+                </div>
+                <div>
+                    <label>Price (in cents)</label>
+                    <input type="number" id="prodPrice" placeholder="2000 (for $20.00)">
+                </div>
+            </div>
+            <label>Description</label>
+            <input type="text" id="prodDesc" placeholder="Product description...">
+
+            <button onclick="createProduct()">Create Product on Connected Account</button>
+            <div id="productResult" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- 4. Go to Storefront -->
+        <div class="section">
+            <h2>4. View Storefront</h2>
+            <p>Preview what customers see when buying from this seller.</p>
+            <button onclick="goToStorefront()" class="secondary">Open Storefront Page &rarr;</button>
+        </div>
+
+    </div>
+
+    <script>
+        const API_BASE = '/api/connect';
+
+        // Helper to log
+        function showResult(elId, data) {
+            const el = document.getElementById(elId);
+            el.style.display = 'block';
+            el.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+        }
+
+        async function createAccount() {
+            const btn = event.target;
+            btn.textContent = 'Creating...';
+            try {
+                const res = await fetch(`${API_BASE}/account`, { method: 'POST' });
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                showResult('createAccountResult', `Account Created! ID: ${data.account}`);
+                document.getElementById('accountId').value = data.account; // Auto-fill
+            } catch (err) {
+                showResult('createAccountResult', `Error: ${err.message}`);
+            } finally {
+                btn.textContent = 'Create New Account';
+            }
+        }
+
+        async function checkStatus() {
+            const id = document.getElementById('accountId').value;
+            if (!id) return alert('Please enter an Account ID');
+
+            try {
+                const res = await fetch(`${API_BASE}/account/${id}`);
+                const data = await res.json();
+                showResult('statusResult', data);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function startOnboarding() {
+            const id = document.getElementById('accountId').value;
+            if (!id) return alert('Please enter an Account ID');
+
+            try {
+                const res = await fetch(`${API_BASE}/account_link`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountId: id })
+                });
+                const data = await res.json();
+
+                if (data.url) {
+                    const link = document.getElementById('onboardingLink');
+                    link.href = data.url;
+                    link.style.display = 'inline-block';
+                    link.textContent = 'Click here to finish onboarding ->';
+                    // Open automatically too
+                    window.open(data.url, '_blank');
+                } else {
+                    throw new Error(data.error || 'Failed to get link');
+                }
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function createProduct() {
+            const id = document.getElementById('accountId').value;
+            if (!id) return alert('Please enter an Account ID first');
+
+            const name = document.getElementById('prodName').value;
+            const price = document.getElementById('prodPrice').value;
+            const desc = document.getElementById('prodDesc').value;
+
+            if (!name || !price) return alert('Please fill in name and price');
+
+            try {
+                const res = await fetch(`${API_BASE}/product`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: id,
+                        name,
+                        description: desc,
+                        priceInCents: parseInt(price),
+                        currency: 'brl'
+                    })
+                });
+                const data = await res.json();
+                showResult('productResult', data);
+            } catch (err) {
+                showResult('productResult', `Error: ${err.message}`);
+            }
+        }
+
+        function goToStorefront() {
+            const id = document.getElementById('accountId').value;
+            if (!id) return alert('Please enter an Account ID');
+            window.location.href = `stripe-storefront.html?accountId=${id}`;
+        }
+    </script>
+
+</body>
+
+</html>
