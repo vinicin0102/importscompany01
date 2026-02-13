@@ -14,7 +14,7 @@ const isStripeEnabled = stripeSecretKey && !stripeSecretKey.includes('PLACEHOLDE
 let stripe;
 if (isStripeEnabled) {
     stripe = require('stripe')(stripeSecretKey, {
-        apiVersion: '2025-01-27.acacia',
+        apiVersion: '2026-01-28.preview', // Versão específica (pode ser beta/preview)
     });
 } else {
     console.warn("⚠️  STRIPE_SECRET_KEY inválida ou ausente. Rotas do Stripe estarão desativadas.");
@@ -231,6 +231,22 @@ router.post('/platform-checkout', async (req, res) => {
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/success.html`,
             cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
+            shipping_address_collection: {
+                allowed_countries: ['BR'], // Limita entrega ao Brasil
+            },
+            phone_number_collection: {
+                enabled: true, // Coleta telefone do cliente para contato
+            },
+            branding_settings: {
+                display_name: 'Imports Company', // Nome da sua loja
+                font_family: 'roboto',
+                border_style: 'rectangular',
+                background_color: '#7D8CC4', // Cor enviada no exemplo
+                button_color: '#A0D2DB',     // Cor enviada no exemplo
+                // Para usar logo/ícone, você precisa subir a imagem no Stripe e pegar o ID (file_...)
+                // icon: { type: 'file', file: 'file_ID_AQUI' },
+                // logo: { type: 'file', file: 'file_ID_AQUI' },
+            },
         });
 
         res.json({ url: session.url });

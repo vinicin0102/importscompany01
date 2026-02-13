@@ -323,7 +323,7 @@
             } catch (err) {
                 console.error(err);
                 // 3. Fallback: WhatsApp
-                alert('Erro na integração. Redirecionando para WhatsApp...');
+                alert(`Erro na integração: ${err.message}\n\nRedirecionando para WhatsApp...`);
                 const productNames = cart.map(item => `- ${item.title}`).join('%0A');
                 const total = document.getElementById('total').innerText;
                 const text = `Pedido (Erro Site):%0A${productNames}%0ATotal: ${total}`;
