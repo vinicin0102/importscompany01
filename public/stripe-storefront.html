@@ -21,7 +21,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
         }
 
@@ -32,6 +32,7 @@
             text-align: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             transition: transform 0.2s;
+            background: #fff;
         }
 
         .product-card:hover {
@@ -50,6 +51,7 @@
             color: #666;
             font-size: 14px;
             margin-bottom: 20px;
+            font-style: italic;
         }
 
         .buy-btn {
@@ -87,32 +89,28 @@
             const loading = document.getElementById('loading');
 
             try {
+                // Fetch Products
                 const res = await fetch('/api/connect/products');
                 const products = await res.json();
+
+                // Fetch Sellers to translate IDs -> Names
+                const accRes = await fetch('/api/connect/accounts');
+                const accounts = await accRes.json();
+                const accMap = {};
+                accounts.forEach(a => accMap[a.id] = a.name);
 
                 loading.style.display = 'none';
 
                 if (products.length === 0) {
-                    grid.innerHTML = '<p>No products found. Create one in the Dashboard!</p>';
+                    grid.innerHTML = '<p>No products available yet. Create one via <a href="/stripe-connect.html">Connect Dashboard</a>!</p>';
                     return;
                 }
-
-                // We need to fetch account names for display? 
-                // The /activities endpoint returns product data which includes connectedAccountId.
-                // We could fetch account details or just show the ID for now.
-                // To make it nicer, let's fetch accounts too to map names.
-                let accountMap = {};
-                try {
-                    const accRes = await fetch('/api/connect/accounts');
-                    const accounts = await accRes.json();
-                    accounts.forEach(a => accountMap[a.accountId] = a.name);
-                } catch (e) { }
 
                 grid.innerHTML = products.map(p => `
                     <div class="product-card">
                         <h3>${p.name}</h3>
                         <div class="price">$${p.price}</div>
-                        <div class="seller">Sold by: <strong>${accountMap[p.connectedAccountId] || 'Unknown Seller'}</strong></div>
+                        <div class="seller">Sold by: <strong>${accMap[p.connectedAccountId] || 'Unknown Seller'}</strong></div>
                         <button class="buy-btn" onclick="buyProduct('${p.priceId}', '${p.connectedAccountId}')">Buy Now</button>
                     </div>
                 `).join('');
@@ -125,13 +123,13 @@
             const btn = event.target;
             const originalText = btn.innerText;
             btn.disabled = true;
-            btn.innerText = 'Processing...';
+            btn.innerText = 'Redirecting...';
 
             try {
                 const res = await fetch('/api/connect/checkout', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ priceId, connectedAccountId, quantity: 1 })
+                    body: JSON.stringify({ priceId, quantity: 1, connectedAccountId })
                 });
                 const data = await res.json();
 

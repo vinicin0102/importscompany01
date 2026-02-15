@@ -4,35 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe Connect Onboarding Demo</title>
+    <title>Stripe Connect (Controller Mode)</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             max-width: 800px;
             margin: 40px auto;
             padding: 20px;
-            line-height: 1.6;
-        }
-
-        h1,
-        h2 {
-            color: #333;
         }
 
         .card {
             border: 1px solid #ddd;
-            border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         input {
-            pad: 10px;
-            margin: 5px 0;
             width: 100%;
-            box-sizing: border-box;
+            padding: 8px;
+            margin: 5px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
@@ -41,28 +33,13 @@
             background: #6772e5;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
         }
 
         button:hover {
             background: #5469d4;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th,
-        td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
         }
 
         .status-badge {
@@ -72,54 +49,69 @@
             font-weight: bold;
         }
 
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
         .status-pending {
             background: #fff3cd;
             color: #856404;
         }
 
-        .status-active {
-            background: #d4edda;
-            color: #155724;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
         }
 
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
+        th,
+        td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
         }
     </style>
 </head>
 
 <body>
-    <h1>Stripe Connect Onboarding (V2 API)</h1>
+    <h1>Stripe Connect Dashboard (Express)</h1>
 
+    <!-- 1. CREATE ACCOUNT -->
     <div class="card">
-        <h2>Create New Connected Account</h2>
-        <form id="createAccountForm">
-            <label>Name (Display Name):</label>
-            <input type="text" id="name" placeholder="e.g. Acme Corp" required>
-
-            <label>Email:</label>
-            <input type="email" id="email" placeholder="user@example.com" required>
-
+        <h2>Create Connected Account</h2>
+        <form id="createForm">
+            <input type="text" id="name" placeholder="Business Name (e.g. My Cafe)" required>
+            <input type="email" id="email" placeholder="Email (e.g. owner@example.com)" required>
             <button type="submit">Create Account</button>
         </form>
     </div>
 
+    <!-- 2. MANAGE ACCOUNTS -->
     <div class="card">
-        <h2>Your Connected Accounts</h2>
+        <h2>Manage Accounts</h2>
         <table id="accountsTable">
             <thead>
                 <tr>
-                    <th>Name</th>
+                    <th>Name / Email</th>
                     <th>Account ID</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                <!-- Accounts will be listed here -->
-            </tbody>
+            <tbody></tbody>
         </table>
+    </div>
+
+    <!-- 3. CREATE PRODUCT (Hidden until account selected) -->
+    <div class="card" id="productCard" style="display:none;">
+        <h2>Create Product for <span id="sellerName"></span></h2>
+        <form id="productForm">
+            <input type="hidden" id="sellerId">
+            <input type="text" id="prodName" placeholder="Product Name" required>
+            <input type="number" id="prodPrice" placeholder="Price (USD)" required>
+            <button type="submit">Create Product</button>
+        </form>
     </div>
 
     <script>
@@ -130,131 +122,78 @@
             tbody.innerHTML = '';
 
             for (const acc of accounts) {
+                // Check Status dynamically
+                const statusRes = await fetch(`/api/connect/status/${acc.id}`);
+                const statusData = await statusRes.json();
+                const isReady = statusData.isEnabled; // true if payouts_enabled
+
                 const tr = document.createElement('tr');
-                const accountId = acc.accountId;
-
-                // Fetch status individually for demo clarity (could be optimized)
-                let statusHtml = '<span class="status-badge" style="background:#eee">Checking...</span>';
-                let actionHtml = '';
-                let productFormHtml = '';
-
-                try {
-                    const statusRes = await fetch(`/api/connect/status/${accountId}`);
-                    const statusData = await statusRes.json();
-
-                    if (statusData.readyToReceivePayments) {
-                        statusHtml = '<span class="status-badge status-active">Active</span>';
-                        actionHtml = `<a href="/stripe-storefront.html" target="_blank" style="text-decoration:none; color: white; background: #28a745; padding: 5px 10px; border-radius: 4px;">Visit Store</a>`;
-
-                        // Show product creation only if active
-                        productFormHtml = `
-                            <details style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                                <summary style="cursor:pointer; color:#6772e5; font-size:14px;">Create Product for this Account</summary>
-                                <form onsubmit="createProduct(event, '${accountId}')" style="margin-top:10px;">
-                                    <input type="text" name="name" placeholder="Product Name" required style="width:100%; margin-bottom:5px; padding:5px;">
-                                    <input type="number" name="price" placeholder="Price (USD)" required style="width:100%; margin-bottom:5px; padding:5px;">
-                                    <button type="submit" style="width:100%; font-size:12px; padding:5px; margin-top:2px;">Create Product</button>
-                                </form>
-                            </details>
-                        `;
-                    } else {
-                        statusHtml = '<span class="status-badge status-error">Incomplete</span>';
-                        actionHtml = `<button onclick="startOnboarding('${accountId}')" style="background: #007bff; font-size:12px; padding:5px 10px;">Finish Onboarding</button>`;
-                    }
-                } catch (e) {
-                    console.log(e);
-                    statusHtml = '<span class="status-badge status-error">Error</span>';
-                }
-
                 tr.innerHTML = `
-                    <td><strong>${acc.name}</strong><br><small>${acc.email}</small></td>
-                    <td><code>${accountId}</code></td>
-                    <td>${statusHtml}</td>
+                    <td>${acc.name}<br><small>${acc.email}</small></td>
+                    <td><code>${acc.id}</code></td>
                     <td>
-                        ${actionHtml}
-                        ${productFormHtml}
+                        <span class="status-badge ${isReady ? 'status-success' : 'status-pending'}">
+                            ${isReady ? 'Active' : 'Pending'}
+                        </span>
+                    </td>
+                    <td>
+                        ${!isReady ?
+                        `<button onclick="onboard('${acc.id}')">Onboard</button>` :
+                        `<button onclick="showProductForm('${acc.id}', '${acc.name}')" style="background:#28a745">Add Product</button>
+                             <a href="/stripe-storefront.html" target="_blank" style="margin-left:5px; text-decoration:none;">View Shop</a>`
+                    }
                     </td>
                 `;
                 tbody.appendChild(tr);
             }
         }
 
-        async function createProduct(e, accountId) {
-            e.preventDefault();
-            const form = e.target;
-            const name = form.name.value;
-            const price = form.price.value;
-            const btn = form.querySelector('button');
-
-            btn.disabled = true;
-            btn.innerText = 'Creating...';
-
-            try {
-                const res = await fetch('/api/connect/product', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, price, connectedAccountId: accountId, currency: 'usd' })
-                });
-                const data = await res.json();
-                if (data.product) {
-                    alert('Product Created!');
-                    form.reset();
-                    // Optional: refresh check
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (err) {
-                alert(err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'Create Product';
-            }
+        async function onboard(accountId) {
+            const res = await fetch('/api/connect/onboard', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accountId })
+            });
+            const data = await res.json();
+            if (data.url) window.location.href = data.url;
+            else alert(data.error);
         }
 
-        async function startOnboarding(accountId) {
-            try {
-                const res = await fetch('/api/connect/onboard', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ accountId })
-                });
-                const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    alert('Error starting onboarding: ' + (data.error || 'Unknown error'));
-                }
-            } catch (err) {
-                alert('Error: ' + err.message);
-            }
+        function showProductForm(id, name) {
+            document.getElementById('productCard').style.display = 'block';
+            document.getElementById('sellerName').innerText = name;
+            document.getElementById('sellerId').value = id;
+            window.scrollTo(0, document.body.scrollHeight);
         }
 
-        document.getElementById('createAccountForm').addEventListener('submit', async (e) => {
+        document.getElementById('createForm').onsubmit = async (e) => {
             e.preventDefault();
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
+            await fetch('/api/connect/account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email })
+            });
+            alert('Account Created!');
+            fetchAccounts();
+        };
 
-            try {
-                const res = await fetch('/api/connect/account', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email })
-                });
-                const data = await res.json();
+        document.getElementById('productForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('prodName').value;
+            const price = document.getElementById('prodPrice').value;
+            const connectedAccountId = document.getElementById('sellerId').value;
 
-                if (data.account) {
-                    alert('Account Created: ' + data.account);
-                    fetchAccounts();
-                    document.getElementById('createAccountForm').reset();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (err) {
-                alert('Error: ' + err.message);
-            }
-        });
+            await fetch('/api/connect/product', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price, connectedAccountId, currency: 'usd' })
+            });
+            alert('Product Created!');
+            e.target.reset();
+        };
 
-        // Load initially
         fetchAccounts();
     </script>
 </body>

@@ -4,317 +4,173 @@ const fs = require('fs');
 const path = require('path');
 
 // -----------------------------------------------------------------------------
-// 1. SETUP & CONFIGURATION
+// 1. CONFIGURATION & SETUP
 // -----------------------------------------------------------------------------
-
-// Load environment variables
 require('dotenv').config();
 
-// Initialize Stripe Client
-// Using the latest SDK version as requested with specific API version "2026-01-28.clover"
-// Initialize Stripe Client
-// Using the latest SDK version as requested with specific API version "2026-01-28.clover"
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 let stripe;
 
+// Initialize Stripe with safe check
 if (stripeSecretKey && !stripeSecretKey.includes('PLACEHOLDER')) {
     try {
         stripe = require('stripe')(stripeSecretKey, {
-            apiVersion: '2026-01-28.clover' // Specific preview version requested
+            apiVersion: '2026-01-28.clover' // Latest Preview API
         });
-        console.log("✅ Stripe (V2) Inicializado com sucesso!");
+        console.log("✅ Stripe Connect (Controller Mode) Initialized!");
     } catch (e) {
-        console.error("❌ Erro ao inicializar Stripe:", e.message);
+        console.error("❌ Stripe Init Error:", e.message);
     }
 } else {
-    console.warn("⚠️  STRIPE_SECRET_KEY ausente ou inválida. Rotas de pagamento desativadas.");
+    console.warn("⚠️  STRIPE_SECRET_KEY missing. Payment routes disabled.");
 }
 
-// Middleware de proteção: Bloqueia rotas se o Stripe não estiver pronto
+// Middleware to ensure Stripe is ready
 router.use((req, res, next) => {
     if (!stripe) {
-        return res.status(503).json({
-            error: 'Serviço Indisponível',
-            message: 'A integração com Stripe não está configurada no servidor (Vercel). Verifique a STRIPE_SECRET_KEY.'
-        });
+        return res.status(503).json({ error: 'Stripe not configured.' });
     }
     next();
 });
 
-// Create data directory if it doesn't exist to store sample data
+// Data Storage (JSON Files)
 const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
-}
-
-// Helper to read/write JSON files (Simulating DB)
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 const ACCOUNTS_FILE = path.join(dataDir, 'connected_accounts.json');
-const PROJECTS_FILE = path.join(dataDir, 'platform_products.json');
+const PRODUCTS_FILE = path.join(dataDir, 'platform_products.json');
 
-const readData = (file) => {
-    if (!fs.existsSync(file)) return [];
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-};
+const readData = (file) => fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
+const writeData = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
-const writeData = (file, data) => {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
-};
 
 // -----------------------------------------------------------------------------
-// 1.5. PLATFORM CHECKOUT (DIRECT SALES)
+// 2. CRITICAL: PLATFORM CHECKOUT (Kept for existing cart compatibility)
 // -----------------------------------------------------------------------------
-
-// POST /api/connect/platform-checkout
-// Handles the main store checkout (cart.html)
 router.post('/platform-checkout', async (req, res) => {
     try {
         const { items } = req.body;
-        if (!items || items.length === 0) return res.status(400).json({ error: 'No items provided' });
+        if (!items?.length) return res.status(400).json({ error: 'No items' });
 
-        // Helper to parse "R$ 1.200,50" -> 120050
-        const parsePrice = (priceStr) => {
-            if (typeof priceStr === 'number') return priceStr;
-            // Remove R$, remove dots (thousand separators), replace comma with dot
-            return Math.round(parseFloat(priceStr.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
-        };
-
-        const line_items = items.map(item => ({
-            price_data: {
-                currency: 'brl',
-                product_data: {
-                    name: item.title,
-                    description: item.size ? `Tamanho: ${item.size} | Cor: ${item.color}` : undefined,
-                    // images: item.img ? [item.img] : undefined, // Images must be publicly accessible URLs
-                },
-                unit_amount: parsePrice(item.price),
-            },
-            quantity: item.quantity || 1,
-        }));
+        const parsePrice = (p) => typeof p === 'number' ? p : Math.round(parseFloat(p.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
 
         const session = await stripe.checkout.sessions.create({
-            line_items,
+            line_items: items.map(item => ({
+                price_data: {
+                    currency: 'brl',
+                    product_data: { name: item.title },
+                    unit_amount: parsePrice(item.price),
+                },
+                quantity: item.quantity || 1,
+            })),
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/success.html`,
             cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
-            shipping_address_collection: {
-                allowed_countries: ['BR'], // Limita entrega ao Brasil
-            },
-            phone_number_collection: {
-                enabled: true, // Coleta telefone do cliente para contato
-            },
-            branding_settings: {
-                display_name: 'Imports Company', // Nome da sua loja
-                font_family: 'roboto',
-                border_style: 'rectangular',
-                background_color: '#7D8CC4', // Cor enviada no exemplo
-                button_color: '#A0D2DB',     // Cor enviada no exemplo
-            },
+            shipping_address_collection: { allowed_countries: ['BR'] },
+            phone_number_collection: { enabled: true },
         });
-
         res.json({ url: session.url });
-    } catch (error) {
-        console.error('Platform Checkout Error:', error);
-        res.status(500).json({ error: error.message });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
+
 // -----------------------------------------------------------------------------
-// 2. CONNECTED ACCOUNTS (V2 API)
+// 3. STRIPE CONNECT FLOWS (REQUESTED IMPLEMENTATION)
 // -----------------------------------------------------------------------------
 
 // POST /api/connect/account
-// Creates a Stripe Connected Account using V2 API
+// Creates a connected account using the 'controller' property
 router.post('/account', async (req, res) => {
     try {
-        const { email, name } = req.body;
-        if (!email || !name) return res.status(400).json({ error: 'Email and Name are required.' });
-
-        // Create account via V2 API
-        const account = await stripe.v2.core.accounts.create({
-            display_name: name,
-            contact_email: email,
-            identity: {
-                country: 'us', // Default to US for sample, or pass from body
-            },
-            dashboard: 'express',
-            defaults: {
-                responsibilities: {
-                    fees_collector: 'application',
-                    losses_collector: 'application',
+        const { name, email } = req.body;
+        // Create account with specific controller configuration
+        const account = await stripe.accounts.create({
+            country: 'US', // Adjust as needed
+            email: email,
+            controller: {
+                fees: {
+                    payer: 'application' // Platform pays fees
                 },
-            },
-            configuration: {
-                recipient: {
-                    capabilities: {
-                        stripe_balance: {
-                            stripe_transfers: {
-                                requested: true,
-                            },
-                        },
-                    },
+                losses: {
+                    payments: 'application' // Platform liable for losses
                 },
+                stripe_dashboard: {
+                    type: 'express' // Gives access to Express Dashboard
+                }
+            },
+            capabilities: {
+                transfers: { requested: true },
             },
         });
 
-        // Store mapping: User (Email) -> Account ID
+        // Store mapping
         const accounts = readData(ACCOUNTS_FILE);
-        accounts.push({ email, name, accountId: account.id, created: new Date() });
+        accounts.push({ id: account.id, name, email, created: new Date() });
         writeData(ACCOUNTS_FILE, accounts);
 
         res.json({ account: account.id });
     } catch (error) {
-        console.error('Error creating account:', error);
+        console.error('Create Account Error:', error);
         res.status(500).json({ error: error.message });
     }
 });
-
-// GET /api/connect/accounts
-// Lists all created connected accounts (from local storage)
-router.get('/accounts', (req, res) => {
-    try {
-        const accounts = readData(ACCOUNTS_FILE);
-        res.json(accounts);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// -----------------------------------------------------------------------------
-// 3. ONBOARDING (V2 API)
-// -----------------------------------------------------------------------------
 
 // POST /api/connect/onboard
-// Generates an account link for onboarding
+// Generates an Account Link for onboarding
 router.post('/onboard', async (req, res) => {
     try {
         const { accountId } = req.body;
-        if (!accountId) return res.status(400).json({ error: 'Account ID is required.' });
-
-        const accountLink = await stripe.v2.core.accountLinks.create({
+        const accountLink = await stripe.accountLinks.create({
             account: accountId,
-            use_case: {
-                type: 'account_onboarding',
-                account_onboarding: {
-                    // Start collecting requirements for transfers
-                    configurations: ['recipient'],
-                    refresh_url: `${req.protocol}://${req.get('host')}/stripe-connect.html`,
-                    return_url: `${req.protocol}://${req.get('host')}/stripe-connect.html?accountId=${accountId}`,
-                },
-            },
+            refresh_url: `${req.protocol}://${req.get('host')}/stripe-connect.html`,
+            return_url: `${req.protocol}://${req.get('host')}/stripe-connect.html?accountId=${accountId}`,
+            type: 'account_onboarding',
         });
-
         res.json({ url: accountLink.url });
     } catch (error) {
-        console.error('Error creating account link:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // GET /api/connect/status/:accountId
-// Checks the onboarding status of a connected account via API
+// Retrieves account status directly from API
 router.get('/status/:accountId', async (req, res) => {
     try {
-        const { accountId } = req.params;
-
-        // Retrieve account details via V2/Core API
-        const account = await stripe.v2.core.accounts.retrieve(accountId, {
-            include: ["configuration.recipient", "requirements"],
-        });
-
-        const readyToReceivePayments = account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status === "active";
-
-        // Check requirements status
-        const requirementsStatus = account.requirements?.summary?.minimum_deadline?.status;
-        // Logic from prompt: considered complete if not currently_due or past_due
-        const onboardingComplete = requirementsStatus !== "currently_due" && requirementsStatus !== "past_due";
-
+        const account = await stripe.accounts.retrieve(req.params.accountId);
+        // specific logic to determine if payouts/charges are enabled
+        const isEnabled = account.payouts_enabled && account.charges_enabled;
         res.json({
-            readyToReceivePayments,
-            onboardingComplete,
-            details: account
+            isEnabled,
+            details: account,
+            requirements: account.requirements
         });
     } catch (error) {
-        console.error('Error getting status:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-
-// -----------------------------------------------------------------------------
-// 4. WEBHOOKS (THIN EVENTS)
-// -----------------------------------------------------------------------------
-
-// POST /api/connect/webhook
-// Listens for V2 thin events
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET; // Placeholder in .env needed
-
-    if (!webhookSecret) {
-        console.warn('⚠️  STRIPE_WEBHOOK_SECRET is missing. Webhooks will not be verified.');
-        return res.sendStatus(200);
-    }
-
-    let thinEvent;
-    try {
-        // Parse the thin event
-        // Note: SDK usually handles body parsing. Assuming req.body is available.
-        // If express.json() is global, req.body is object. stripe.parseThinEvent needs string payload or object?
-        // Checking SDK docs via implementation pattern: client.parseThinEvent(req.body, sig, secret)
-        thinEvent = stripe.parseThinEvent(req.body, sig, webhookSecret);
-    } catch (err) {
-        console.error(`Webhook Error: ${err.message}`);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    // Handle the event
-    try {
-        if (thinEvent.type === 'v2.core.account.updated' || thinEvent.type === 'v2.core.account.requirements.updated') {
-            // Fetch full event details
-            const event = await stripe.v2.core.events.retrieve(thinEvent.id);
-            console.log('🔔 Received Event:', event.type);
-            console.log('   Data:', JSON.stringify(event.data, null, 2));
-
-            // Implement logic to update local DB status if needed
-        }
-
-        res.json({ received: true });
-    } catch (err) {
-        console.error('Error handling event:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
-// -----------------------------------------------------------------------------
-// 5. PRODUCTS (PLATFORM LEVEL)
-// -----------------------------------------------------------------------------
-
 // POST /api/connect/product
-// Creates a product on the Platform account, mapping it to a connected account
+// Creates a product on the PLATFORM account
 router.post('/product', async (req, res) => {
     try {
         const { name, description, price, currency, connectedAccountId } = req.body;
 
-        if (!name || !price || !connectedAccountId) {
-            return res.status(400).json({ error: 'Name, Price and Connected Account ID are required.' });
-        }
-
         // Create product on Platform
         const product = await stripe.products.create({
-            name: name,
-            description: description || 'Platform Product',
+            name,
+            description,
             default_price_data: {
-                unit_amount: Math.round(parseFloat(price) * 100), // Convert to cents
-                currency: currency || 'usd', // Default to USD
+                unit_amount: Math.round(parseFloat(price) * 100),
+                currency: currency || 'usd',
             },
             metadata: {
-                connected_account_id: connectedAccountId // Store mapping in metadata
+                connected_account_id: connectedAccountId // Link to seller
             }
         });
 
-        // Store persistent mapping in JSON file
-        const products = readData(PROJECTS_FILE);
+        // Save to local JSON for display
+        const products = readData(PRODUCTS_FILE);
         products.push({
             id: product.id,
             priceId: product.default_price,
@@ -323,51 +179,27 @@ router.post('/product', async (req, res) => {
             connectedAccountId,
             created: new Date()
         });
-        writeData(PROJECTS_FILE, products);
+        writeData(PRODUCTS_FILE, products);
 
         res.json({ product });
     } catch (error) {
-        console.error('Error creating product:', error);
         res.status(500).json({ error: error.message });
     }
 });
-
-// GET /api/connect/products
-// Lists available platform products
-router.get('/products', (req, res) => {
-    try {
-        const products = readData(PROJECTS_FILE);
-        res.json(products);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-// -----------------------------------------------------------------------------
-// 6. CHECKOUT (DESTINATION CHARGES)
-// -----------------------------------------------------------------------------
 
 // POST /api/connect/checkout
-// Creates a checkout session sending funds to the connected account
+// Creates a Destination Charge Checkout Session
 router.post('/checkout', async (req, res) => {
     try {
         const { priceId, quantity, connectedAccountId } = req.body;
 
-        if (!priceId || !connectedAccountId) {
-            return res.status(400).json({ error: 'Price ID and Connected Account ID are required.' });
-        }
-
-        // Create Session with Destination Charge
         const session = await stripe.checkout.sessions.create({
-            line_items: [
-                {
-                    price: priceId,
-                    quantity: quantity || 1,
-                },
-            ],
+            line_items: [{
+                price: priceId,
+                quantity: quantity || 1,
+            }],
             payment_intent_data: {
-                application_fee_amount: 1000, // $10.00 fee (sample)
+                application_fee_amount: 500, // $5.00 fee example
                 transfer_data: {
                     destination: connectedAccountId,
                 },
@@ -379,9 +211,19 @@ router.post('/checkout', async (req, res) => {
 
         res.json({ url: session.url });
     } catch (error) {
-        console.error('Error creating checkout:', error);
+        console.error('Checkout Error:', error);
         res.status(500).json({ error: error.message });
     }
+});
+
+// GET /api/connect/accounts (Helper for UI)
+router.get('/accounts', (req, res) => {
+    res.json(readData(ACCOUNTS_FILE));
+});
+
+// GET /api/connect/products (Helper for UI)
+router.get('/products', (req, res) => {
+    res.json(readData(PRODUCTS_FILE));
 });
 
 module.exports = router;
