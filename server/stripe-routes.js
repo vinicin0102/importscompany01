@@ -12,14 +12,33 @@ require('dotenv').config();
 
 // Initialize Stripe Client
 // Using the latest SDK version as requested with specific API version "2026-01-28.clover"
+// Initialize Stripe Client
+// Using the latest SDK version as requested with specific API version "2026-01-28.clover"
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecretKey) {
-    console.error("❌ ERROR: STRIPE_SECRET_KEY is missing in .env file.");
-    process.exit(1);
+let stripe;
+
+if (stripeSecretKey && !stripeSecretKey.includes('PLACEHOLDER')) {
+    try {
+        stripe = require('stripe')(stripeSecretKey, {
+            apiVersion: '2026-01-28.clover' // Specific preview version requested
+        });
+        console.log("✅ Stripe (V2) Inicializado com sucesso!");
+    } catch (e) {
+        console.error("❌ Erro ao inicializar Stripe:", e.message);
+    }
+} else {
+    console.warn("⚠️  STRIPE_SECRET_KEY ausente ou inválida. Rotas de pagamento desativadas.");
 }
 
-const stripe = require('stripe')(stripeSecretKey, {
-    apiVersion: '2026-01-28.clover' // Specific preview version requested
+// Middleware de proteção: Bloqueia rotas se o Stripe não estiver pronto
+router.use((req, res, next) => {
+    if (!stripe) {
+        return res.status(503).json({
+            error: 'Serviço Indisponível',
+            message: 'A integração com Stripe não está configurada no servidor (Vercel). Verifique a STRIPE_SECRET_KEY.'
+        });
+    }
+    next();
 });
 
 // Create data directory if it doesn't exist to store sample data
