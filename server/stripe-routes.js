@@ -62,7 +62,6 @@ router.post('/platform-checkout', async (req, res) => {
                 },
                 quantity: item.quantity || 1,
             })),
-            payment_method_types: ['card', 'pix'],
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/success.html`,
             cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
@@ -163,7 +162,7 @@ router.post('/product', async (req, res) => {
             description,
             default_price_data: {
                 unit_amount: Math.round(parseFloat(price) * 100),
-                currency: currency || 'brl',
+                currency: currency || 'usd',
             },
             metadata: {
                 connected_account_id: connectedAccountId // Link to seller
@@ -205,7 +204,6 @@ router.post('/checkout', async (req, res) => {
                     destination: connectedAccountId,
                 },
             },
-            payment_method_types: ['card', 'pix'],
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/success.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.protocol}://${req.get('host')}/stripe-storefront.html`,
