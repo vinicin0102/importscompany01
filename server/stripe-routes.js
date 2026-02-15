@@ -61,6 +61,64 @@ const writeData = (file, data) => {
 };
 
 // -----------------------------------------------------------------------------
+// 1.5. PLATFORM CHECKOUT (DIRECT SALES)
+// -----------------------------------------------------------------------------
+
+// POST /api/connect/platform-checkout
+// Handles the main store checkout (cart.html)
+router.post('/platform-checkout', async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!items || items.length === 0) return res.status(400).json({ error: 'No items provided' });
+
+        // Helper to parse "R$ 1.200,50" -> 120050
+        const parsePrice = (priceStr) => {
+            if (typeof priceStr === 'number') return priceStr;
+            // Remove R$, remove dots (thousand separators), replace comma with dot
+            return Math.round(parseFloat(priceStr.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
+        };
+
+        const line_items = items.map(item => ({
+            price_data: {
+                currency: 'brl',
+                product_data: {
+                    name: item.title,
+                    description: item.size ? `Tamanho: ${item.size} | Cor: ${item.color}` : undefined,
+                    // images: item.img ? [item.img] : undefined, // Images must be publicly accessible URLs
+                },
+                unit_amount: parsePrice(item.price),
+            },
+            quantity: item.quantity || 1,
+        }));
+
+        const session = await stripe.checkout.sessions.create({
+            line_items,
+            mode: 'payment',
+            success_url: `${req.protocol}://${req.get('host')}/success.html`,
+            cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
+            shipping_address_collection: {
+                allowed_countries: ['BR'], // Limita entrega ao Brasil
+            },
+            phone_number_collection: {
+                enabled: true, // Coleta telefone do cliente para contato
+            },
+            branding_settings: {
+                display_name: 'Imports Company', // Nome da sua loja
+                font_family: 'roboto',
+                border_style: 'rectangular',
+                background_color: '#7D8CC4', // Cor enviada no exemplo
+                button_color: '#A0D2DB',     // Cor enviada no exemplo
+            },
+        });
+
+        res.json({ url: session.url });
+    } catch (error) {
+        console.error('Platform Checkout Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// -----------------------------------------------------------------------------
 // 2. CONNECTED ACCOUNTS (V2 API)
 // -----------------------------------------------------------------------------
 
