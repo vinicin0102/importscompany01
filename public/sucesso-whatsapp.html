@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento Confirmado!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 50px 20px;
+            background-color: #f4f6f8;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #28a745;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 18px;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .btn-whatsapp:hover {
+            background-color: #128C7E;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div id="loading">
+            <h1>Processando seu Pedido...</h1>
+            <div class="spinner"></div>
+            <p>Estamos confirmando seu pagamento e preparando seu envio para o WhatsApp.</p>
+        </div>
+
+        <div id="success" style="display:none;">
+            <h1>Pagamento Confirmado! 🎉</h1>
+            <p>Obrigado pela sua compra. Agora vamos calcular o frete e finalizar seu pedido.</p>
+            <p>Se você não for redirecionado automaticamente, clique no botão abaixo:</p>
+            <a id="whatsappLink" href="#" class="btn-whatsapp">
+                Falar no WhatsApp
+            </a>
+        </div>
+
+        <div id="error" style="display:none;">
+            <h1 style="color:#dc3545">Ops!</h1>
+            <p>Não conseguimos carregar os detalhes do pedido automaticamente.</p>
+            <p>Por favor, entre em contato conosco manualmente.</p>
+            <a href="https://wa.me/5531986422209" class="btn-whatsapp">Falar com Suporte</a>
+        </div>
+    </div>
+
+    <script>
+        // Configuração: Seu número de WhatsApp (apenas números, com código do país 55)
+        const WHATSAPP_NUMBER = "5531999716606";
+
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const sessionId = params.get('session_id');
+
+            if (!sessionId) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                return;
+            }
+
+            try {
+                // 1. Busca detalhes da sessão no backend
+                const response = await fetch(`/api/connect/checkout-session/${sessionId}`);
+                const session = await response.json();
+
+                if (session.error) throw new Error(session.error);
+
+                // 2. Extrai dados do cliente e produtos
+                const customerName = session.customer_details?.name || 'Cliente';
+                const customerAddress = session.shipping_details?.address || session.customer_details?.address;
+
+                // Formata endereço
+                let addressText = "Endereço não informado";
+                if (customerAddress) {
+                    addressText = `${customerAddress.line1}, ${customerAddress.city} - ${customerAddress.state}, CEP: ${customerAddress.postal_code}`;
+                }
+
+                // Lista itens comprados
+                // O Stripe session.line_items.data pode vir paginado, mas aqui pegamos o básico
+                const items = session.line_items?.data || [];
+                const itemsList = items.map(item => `📦 ${item.quantity}x ${item.description}`).join('\n');
+
+                // 3. Monta a mensagem
+                const message = `
+Olá! Acabei de fazer o pagamento do meu pedido. ✅
+
+*ID do Pedido:* ${sessionId.slice(-8)}
+*Nome:* ${customerName}
+
+*Itens:*
+${itemsList}
+
+*Endereço de Entrega:*
+${addressText}
+
+*Gostaria de calcular o valor do frete e finalizar.*
+                `.trim();
+
+                // 4. Cria o link do WhatsApp
+                const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+                // 5. Atualiza a UI e Redireciona
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('success').style.display = 'block';
+                document.getElementById('whatsappLink').href = whatsappUrl;
+
+                // Redireciona após 2 segundos para dar tempo de ler "Sucesso"
+                setTimeout(() => {
+                    window.location.href = whatsappUrl;
+                }, 2500);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

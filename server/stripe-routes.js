@@ -63,7 +63,7 @@ router.post('/platform-checkout', async (req, res) => {
                 quantity: item.quantity || 1,
             })),
             mode: 'payment',
-            success_url: `${req.protocol}://${req.get('host')}/success.html`,
+            success_url: `${req.protocol}://${req.get('host')}/sucesso-whatsapp.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
             shipping_address_collection: { allowed_countries: ['BR'] },
             phone_number_collection: { enabled: true },
@@ -205,13 +205,27 @@ router.post('/checkout', async (req, res) => {
                 },
             },
             mode: 'payment',
-            success_url: `${req.protocol}://${req.get('host')}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+            mode: 'payment',
+            success_url: `${req.protocol}://${req.get('host')}/sucesso-whatsapp.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.protocol}://${req.get('host')}/stripe-storefront.html`,
         });
 
         res.json({ url: session.url });
     } catch (error) {
         console.error('Checkout Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/connect/checkout-session/:sessionId
+// Retrieve session details for the success page (WhatsApp redirect)
+router.get('/checkout-session/:sessionId', async (req, res) => {
+    try {
+        const session = await stripe.checkout.sessions.retrieve(req.params.sessionId, {
+            expand: ['line_items', 'customer_details'],
+        });
+        res.json(session);
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
