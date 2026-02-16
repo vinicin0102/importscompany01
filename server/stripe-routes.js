@@ -54,6 +54,7 @@ router.post('/platform-checkout', async (req, res) => {
         const parsePrice = (p) => typeof p === 'number' ? p : Math.round(parseFloat(p.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
 
         const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card', 'pix'], // Aceita Cartões e PIX
             line_items: items.map(item => ({
                 price_data: {
                     currency: 'brl',
@@ -101,6 +102,7 @@ router.post('/account', async (req, res) => {
             },
             capabilities: {
                 transfers: { requested: true },
+                pix_payments: { requested: true }, // Solicita ativação do PIX para o vendedor
             },
         });
 
@@ -194,6 +196,7 @@ router.post('/checkout', async (req, res) => {
         const { priceId, quantity, connectedAccountId } = req.body;
 
         const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card', 'pix'], // Aceita Cartões e PIX
             line_items: [{
                 price: priceId,
                 quantity: quantity || 1,
@@ -204,7 +207,6 @@ router.post('/checkout', async (req, res) => {
                     destination: connectedAccountId,
                 },
             },
-            mode: 'payment',
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/sucesso-whatsapp.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.protocol}://${req.get('host')}/stripe-storefront.html`,
