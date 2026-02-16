@@ -54,7 +54,7 @@ router.post('/platform-checkout', async (req, res) => {
         const parsePrice = (p) => typeof p === 'number' ? p : Math.round(parseFloat(p.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
 
         const session = await stripe.checkout.sessions.create({
-            automatic_payment_methods: { enabled: true }, // Gerencia métodos pelo Dashboard do Stripe
+            payment_method_types: ['card'], // Fallback seguro para evitar erro 400
             line_items: items.map(item => ({
                 price_data: {
                     currency: 'brl',
@@ -196,7 +196,7 @@ router.post('/checkout', async (req, res) => {
         const { priceId, quantity, connectedAccountId } = req.body;
 
         const session = await stripe.checkout.sessions.create({
-            automatic_payment_methods: { enabled: true },
+            payment_method_types: ['card'],
             line_items: [{
                 price: priceId,
                 quantity: quantity || 1,
