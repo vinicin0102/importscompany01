@@ -200,6 +200,9 @@
     </footer>
 
     <script>
+        // Global state for shipping
+        window.selectedShipping = null;
+
         // Load Cart from LocalStorage
         document.addEventListener('DOMContentLoaded', () => {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -228,7 +231,12 @@
                 container.appendChild(itemEl);
 
                 // Parse price (R$ 1.000,00 -> 1000.00)
-                const priceValue = parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.'));
+                let priceValue = 0;
+                if (typeof item.price === 'string') {
+                    priceValue = parseFloat(item.price.replace('R$', '').replace(/\./g, '').replace(',', '.'));
+                } else {
+                    priceValue = item.price;
+                }
                 total += priceValue;
             });
 
@@ -236,39 +244,100 @@
             const subtotalFormatted = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('subtotal').innerText = subtotalFormatted;
 
-            // Lógica de Frete: Simulação por CEP
+            // Set initial total (without shipping)
+            document.getElementById('total').innerText = subtotalFormatted;
+
+            // Lógica de Frete: Simulação por API
             const freteEl = document.getElementById('frete-value');
             const cepInput = document.getElementById('cepInput');
-            const btnCalc = document.getElementById('btnStartCalc'); // Botão Simular
+            const btnCalc = document.getElementById('btnStartCalc');
 
-            window.simularFrete = () => {
+            window.simularFrete = async () => {
                 const cep = cepInput.value.replace(/\D/g, '');
                 if (cep.length < 8) {
                     alert('Por favor, digite um CEP válido.');
                     return;
                 }
 
-                btnCalc.innerText = 'Calculando...';
+                btnCalc.innerText = '...';
+                btnCalc.disabled = true;
+                freteEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-                setTimeout(() => {
-                    btnCalc.innerText = 'Calcular';
+                try {
+                    const response = await fetch('/api/shipping/calculate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cep, items: cart })
+                    });
 
-                    if (total >= 999) {
-                        freteEl.innerText = 'Grátis';
-                        freteEl.style.color = 'green';
-                        document.getElementById('total').innerText = subtotalFormatted;
-                    } else {
-                        const frete = 49.90; // Valor fixo simulado
-                        const totalComFrete = total + frete;
-                        freteEl.innerText = 'R$ 49,90';
-                        freteEl.style.color = '#e74c3c';
-                        document.getElementById('total').innerText = totalComFrete.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    if (!response.ok) throw new Error('Erro na API');
+
+                    const options = await response.json();
+
+                    // Render options
+                    let optionsContainer = document.getElementById('shipping-options');
+                    if (!optionsContainer) {
+                        const summaryRow = freteEl.parentElement;
+                        optionsContainer = document.createElement('div');
+                        optionsContainer.id = 'shipping-options';
+                        summaryRow.insertAdjacentElement('afterend', optionsContainer);
                     }
-                }, 1000); // Simulando delay de API
+
+                    let html = '<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">';
+                    options.forEach((opt, index) => {
+                        const priceFormatted = opt.price === 0 ? 'Grátis' : `R$ ${opt.price.toFixed(2).replace('.', ',')}`;
+                        const checked = index === 0 ? 'checked' : '';
+
+                        // Auto-select first option logic
+                        if (index === 0) updateShippingTotal(opt, total);
+
+                        // Escape quotes for JSON safely
+                        const optString = JSON.stringify(opt).replace(/"/g, '&quot;');
+
+                        html += `
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 8px; border: 1px solid #eee; border-radius: 6px; background: #f9f9f9;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="shipping" value="${index}" ${checked} onchange="updateShippingTotal(${optString}, ${total})">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="font-weight: 500; font-size: 0.95rem;">${opt.name}</span>
+                                        <span style="font-size: 0.8rem; color: #666;">${opt.days} dias úteis</span>
+                                    </div>
+                                </div>
+                                <span style="font-weight: bold; color: ${opt.price === 0 ? 'green' : '#333'}">${priceFormatted}</span>
+                            </label>
+                        `;
+                    });
+                    html += '</div>';
+
+                    optionsContainer.innerHTML = html;
+                    freteEl.innerText = ''; // Clear "A calcular" text as options are shown below
+
+                } catch (err) {
+                    console.error(err);
+                    freteEl.innerText = 'Erro ao calcular';
+                    freteEl.style.color = 'red';
+                    if (document.getElementById('shipping-options')) document.getElementById('shipping-options').innerHTML = '';
+                } finally {
+                    btnCalc.innerText = 'OK';
+                    btnCalc.disabled = false;
+                }
+            };
+
+            // Function to update total when shipping changes
+            window.updateShippingTotal = (opt, cartTotal) => {
+                window.selectedShipping = opt;
+                const grandTotal = cartTotal + opt.price;
+
+                document.getElementById('total').innerText = grandTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                // Update small text if needed
+                const freteEl = document.getElementById('frete-value');
+                freteEl.innerText = opt.price === 0 ? 'Grátis' : `R$ ${opt.price.toFixed(2).replace('.', ',')}`;
+                freteEl.style.color = opt.price === 0 ? 'green' : '#333';
             };
 
             // Inicialmente mostra "A Calcular"
-            freteEl.innerText = 'A calcular';
+            freteEl.innerText = 'Digite seu CEP';
             freteEl.style.color = '#777';
         });
 
@@ -306,10 +375,25 @@
                 }
 
                 // 2. Stripe Checkout (Plataforma)
+                // Add Shipping Cost as Item if selected
+                const checkoutCart = [...cart];
+                if (window.selectedShipping && window.selectedShipping.price > 0) {
+                    // Formata o preço como string para o backend processar corretamente (multiplicar por 100)
+                    const priceString = `R$ ${window.selectedShipping.price.toFixed(2).replace('.', ',')}`;
+
+                    checkoutCart.push({
+                        title: `Frete: ${window.selectedShipping.name}`,
+                        price: priceString,
+                        quantity: 1,
+                        // Dummy image for shipping
+                        img: 'https://cdn-icons-png.flaticon.com/512/756/756940.png'
+                    });
+                }
+
                 const response = await fetch('/api/connect/platform-checkout', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ items: cart })
+                    body: JSON.stringify({ items: checkoutCart })
                 });
 
                 const data = await response.json();
@@ -326,7 +410,9 @@
                 alert(`Erro na integração: ${err.message}\n\nRedirecionando para WhatsApp...`);
                 const productNames = cart.map(item => `- ${item.title}`).join('%0A');
                 const total = document.getElementById('total').innerText;
-                const text = `Pedido (Erro Site):%0A${productNames}%0ATotal: ${total}`;
+                const shippingInfo = window.selectedShipping ? `%0AFrete: ${window.selectedShipping.name} (${window.selectedShipping.price === 0 ? 'Grátis' : 'R$ ' + window.selectedShipping.price})` : '';
+
+                const text = `Pedido:%0A${productNames}${shippingInfo}%0ATotal: ${total}%0AEndereço: ${rua}, ${num} - ${cep}`;
                 window.location.href = `https://wa.me/5511999999999?text=${text}`;
             } finally {
                 btn.innerText = originalText;

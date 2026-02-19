@@ -71,16 +71,31 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de Acesso Público (Leitura)
+-- Políticas de Acesso Público (Leitura)
+DROP POLICY IF EXISTS "Public Read Access Products" ON products;
 CREATE POLICY "Public Read Access Products" ON products FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access Categories" ON categories;
 CREATE POLICY "Public Read Access Categories" ON categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access Banners" ON banners;
 CREATE POLICY "Public Read Access Banners" ON banners FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access Settings" ON settings;
 CREATE POLICY "Public Read Access Settings" ON settings FOR SELECT USING (true);
 
 -- Políticas de Acesso Service Role (Escrita - O Backend usa Service Role, bypass RLS)
 -- Mas para upload direto do client ou admin user, podemos permitir:
+DROP POLICY IF EXISTS "Allow All for Authenticated" ON products;
 CREATE POLICY "Allow All for Authenticated" ON products FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow All for Authenticated Categories" ON categories;
 CREATE POLICY "Allow All for Authenticated Categories" ON categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow All for Authenticated Banners" ON banners;
 CREATE POLICY "Allow All for Authenticated Banners" ON banners FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow All for Authenticated Settings" ON settings;
 CREATE POLICY "Allow All for Authenticated Settings" ON settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Storage: Criar bucket 'images' e políticas

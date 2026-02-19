@@ -443,6 +443,12 @@ try {
 }
 
 // =============================================
+// SHIPPING ROUTES (Correios)
+// =============================================
+const shippingRoutes = require('./shipping-routes');
+app.use('/api/shipping', shippingRoutes);
+
+// =============================================
 // STRIPE CONNECT DEMO ROUTES
 // =============================================
 console.log('💳 Carregando rotas do Stripe em /api/connect...');
