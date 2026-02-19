@@ -3,24 +3,26 @@ const router = express.Router();
 const { calcularPrecoPrazo } = require('correios-brasil');
 
 // Constantes de Frete
+// Constantes de Frete
 const PACOTE_FORMATO = '1'; // 1 = Caixa/Pacote
-const CEP_ORIGEM = '01001000'; // Ex: São Paulo - SP (Pode mover para .env)
+const CEP_ORIGEM = '35162394'; // Ipatinga - MG
 const SERVICOS = ['04014', '04510']; // 04014 = SEDEX, 04510 = PAC
 
-// Tabela de Contingência (Estimativas 2026 - 1kg Base de SP)
+// Tabela de Contingência (Estimativas 2026 - 1kg Base de MG - Ipatinga)
+// Valores ajustados para saída de MG
 const CONTINGENCIA = {
-    'SP': { pac: 22.80, sedex: 28.50, prazoPac: 5, prazoSedex: 1 },
-    'RJ': { pac: 26.40, sedex: 42.90, prazoPac: 7, prazoSedex: 2 },
-    'MG': { pac: 27.10, sedex: 45.20, prazoPac: 7, prazoSedex: 2 },
-    'ES': { pac: 32.50, sedex: 58.60, prazoPac: 8, prazoSedex: 3 },
-    'PR': { pac: 28.30, sedex: 48.10, prazoPac: 7, prazoSedex: 2 },
-    'SC': { pac: 32.90, sedex: 62.40, prazoPac: 8, prazoSedex: 3 },
-    'RS': { pac: 35.60, sedex: 75.80, prazoPac: 9, prazoSedex: 3 },
-    'DF': { pac: 35.20, sedex: 65.10, prazoPac: 8, prazoSedex: 2 },
-    'GO': { pac: 38.40, sedex: 72.50, prazoPac: 9, prazoSedex: 3 },
+    'MG': { pac: 22.80, sedex: 28.50, prazoPac: 5, prazoSedex: 1 },
+    'ES': { pac: 26.40, sedex: 42.90, prazoPac: 7, prazoSedex: 2 },
+    'RJ': { pac: 27.10, sedex: 45.20, prazoPac: 7, prazoSedex: 2 },
+    'SP': { pac: 28.30, sedex: 48.10, prazoPac: 7, prazoSedex: 2 },
+    'BA': { pac: 35.20, sedex: 65.10, prazoPac: 8, prazoSedex: 3 },
+    'DF': { pac: 32.90, sedex: 62.40, prazoPac: 8, prazoSedex: 3 },
+    'GO': { pac: 35.60, sedex: 68.80, prazoPac: 9, prazoSedex: 3 },
+    'PR': { pac: 38.40, sedex: 72.50, prazoPac: 9, prazoSedex: 3 },
+    'SC': { pac: 42.10, sedex: 85.30, prazoPac: 10, prazoSedex: 3 },
+    'RS': { pac: 45.70, sedex: 88.90, prazoPac: 11, prazoSedex: 4 },
     'MS': { pac: 42.10, sedex: 85.30, prazoPac: 10, prazoSedex: 3 },
     'MT': { pac: 55.70, sedex: 98.90, prazoPac: 11, prazoSedex: 4 },
-    'BA': { pac: 52.30, sedex: 95.40, prazoPac: 12, prazoSedex: 4 },
     'PE': { pac: 65.80, sedex: 115.20, prazoPac: 14, prazoSedex: 4 },
     'CE': { pac: 68.50, sedex: 120.60, prazoPac: 15, prazoSedex: 4 },
     'RN': { pac: 72.10, sedex: 125.90, prazoPac: 16, prazoSedex: 5 },
@@ -35,7 +37,7 @@ const CONTINGENCIA = {
     'RO': { pac: 88.70, sedex: 150.90, prazoPac: 18, prazoSedex: 6 },
     'RR': { pac: 98.50, sedex: 165.10, prazoPac: 25, prazoSedex: 7 },
     'AC': { pac: 92.30, sedex: 160.40, prazoPac: 22, prazoSedex: 7 },
-    'TO': { pac: 65.50, sedex: 110.20, prazoPac: 12, prazoSedex: 4 }
+    'TO': { pac: 55.50, sedex: 98.20, prazoPac: 12, prazoSedex: 4 }
 };
 
 function getUfByCep(cepStr) {
