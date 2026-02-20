@@ -577,7 +577,7 @@
             </div>
 
             <div style="text-align: center; margin-top: 60px;">
-                <a href="#" class="btn">Ver Todos os Produtos</a>
+                <button onclick="window.filterProducts('Todos')" class="btn">Ver Todos os Produtos</button>
             </div>
         </div>
     </section>
@@ -1071,8 +1071,19 @@
                 if (!container) return;
 
                 if (activeCategories.length > 0) {
-                    container.innerHTML = activeCategories.map(cat => `
-                        <div class="category-card" onclick="window.location.href='#products'">
+                    // Adicionar opção "Ver Tudo" no início
+                    const allOption = `
+                        <div class="category-card" onclick="window.filterProducts(null)">
+                            <div class="category-icon">
+                                <i class="fas fa-th-large"></i>
+                            </div>
+                            <h3>Ver Tudo</h3>
+                            <p>Exibir apenas destaques selecionados</p>
+                        </div>
+                    `;
+
+                    container.innerHTML = allOption + activeCategories.map(cat => `
+                        <div class="category-card" onclick="window.filterProducts('${cat.name}')">
                             <div class="category-icon">
                                 <i class="fas ${cat.icon || 'fa-tag'}"></i>
                             </div>

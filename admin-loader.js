@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettingsFromAdmin();
 });
 
+let allProducts = [];
+
 async function loadProductsFromAdmin() {
     try {
         console.log('🔄 Buscando produtos do Admin em /api/products...');
@@ -19,11 +21,12 @@ async function loadProductsFromAdmin() {
         }
 
         const products = await response.json();
-        const activeProducts = products.filter(p => p.active);
+        allProducts = products.filter(p => p.active);
 
-        if (activeProducts.length > 0) {
-            console.log('✅ Produtos do Admin encontrados:', activeProducts.length);
-            renderProducts(activeProducts);
+        if (allProducts.length > 0) {
+            console.log('✅ Produtos do Admin encontrados:', allProducts.length);
+            // Por padrão, mostra apenas produtos com "selo" (badge)
+            filterProducts();
         } else {
             console.log('⚠️ Nenhum produto ativo no Admin. Mantendo estáticos.');
         }
@@ -31,6 +34,42 @@ async function loadProductsFromAdmin() {
     } catch (error) {
         console.warn('⚠️ Admin API offline ou erro. Mantendo produtos estáticos para segurança.', error);
         // Não faz nada, deixa os produtos hardcoded do HTML visíveis
+    }
+}
+
+window.filterProducts = function (category = null) {
+    let filtered;
+    const sectionTitle = document.querySelector('#products .section-title');
+
+    if (category === 'Todos') {
+        // Mostra ABSOLUTAMENTE TODOS os produtos ativos
+        filtered = allProducts;
+        if (sectionTitle) sectionTitle.innerHTML = `Todos os <span class="gold-text">Produtos</span>`;
+    } else if (category) {
+        // Se escolheu uma categoria específica, mostra todos os produtos dessa categoria
+        filtered = allProducts.filter(p => p.category === category);
+        if (sectionTitle) sectionTitle.innerHTML = `Categoria: <span class="gold-text">${category}</span>`;
+    } else {
+        // Caso contrário (Início/Padrão), mostra apenas produtos que tem BADGE (selo)
+        filtered = allProducts.filter(p => p.badge && p.badge.trim() !== '');
+        if (sectionTitle) sectionTitle.innerHTML = `Produtos em <span class="gold-text">Alta</span>`;
+    }
+
+    renderProducts(filtered);
+
+    // Scroll suave para a seção de produtos se houver interação
+    if (category || filtered.length < allProducts.length) {
+        const productsSection = document.getElementById('products');
+        if (productsSection) {
+            const headerOffset = 80;
+            const elementPosition = productsSection.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: "smooth"
+            });
+        }
     }
 }
 
@@ -48,10 +87,21 @@ function renderProducts(products) {
     const grid = document.querySelector('.products-grid');
     if (!grid) return;
 
-    // Limpa produtos estáticos
+    // Limpa produtos
     grid.innerHTML = '';
 
-    // Adiciona produtos do Admin
+    if (products.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #666;">
+                <i class="fas fa-search" style="font-size: 3rem; color: #ddd; margin-bottom: 20px; display: block;"></i>
+                <p style="font-size: 1.2rem;">Nenhum produto encontrado nesta seleção.</p>
+                <button onclick="window.filterProducts(null)" class="btn" style="margin-top: 20px;">Ver Destaques</button>
+            </div>
+        `;
+        return;
+    }
+
+    // Adiciona produtos
     products.forEach(product => {
         // Calcula parcelamento
         const priceNum = parseFloat(product.price);
