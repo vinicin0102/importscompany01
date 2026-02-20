@@ -1083,7 +1083,7 @@
                     `;
 
                     container.innerHTML = allOption + activeCategories.map(cat => `
-                        <div class="category-card" onclick="window.filterProducts('${cat.name}')">
+                        <div class="category-card" onclick="window.filterProducts('${cat.name}', '${cat.id}')">
                             <div class="category-icon">
                                 <i class="fas ${cat.icon || 'fa-tag'}"></i>
                             </div>

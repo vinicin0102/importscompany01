@@ -37,7 +37,7 @@ async function loadProductsFromAdmin() {
     }
 }
 
-window.filterProducts = function (category = null) {
+window.filterProducts = function (category = null, categoryId = null) {
     let filtered;
     const sectionTitle = document.querySelector('#products .section-title');
 
@@ -45,11 +45,19 @@ window.filterProducts = function (category = null) {
         // Mostra ABSOLUTAMENTE TODOS os produtos ativos
         filtered = allProducts;
         if (sectionTitle) sectionTitle.innerHTML = `Todos os <span class="gold-text">Produtos</span>`;
-    } else if (category) {
-        // Se escolheu uma categoria específica, mostra todos os produtos dessa categoria
-        const targetCat = category.toLowerCase().trim();
-        filtered = allProducts.filter(p => p.category && p.category.toLowerCase().trim() === targetCat);
-        if (sectionTitle) sectionTitle.innerHTML = `Categoria: <span class="gold-text">${category}</span>`;
+    } else if (category || categoryId) {
+        // Se escolheu uma categoria específica, tenta comparar com Nome ou ID
+        const targetName = category ? category.toLowerCase().trim() : null;
+        const targetId = categoryId ? categoryId.toLowerCase().trim() : null;
+
+        filtered = allProducts.filter(p => {
+            if (!p.category) return false;
+            const productCat = p.category.toLowerCase().trim();
+            // Retorna verdadeiro se o produto bater com o Nome ou com o ID da categoria
+            return productCat === targetName || productCat === targetId;
+        });
+
+        if (sectionTitle) sectionTitle.innerHTML = `${category || 'Categoria'}: <span class="gold-text">Selecionada</span>`;
     } else {
         // Caso contrário (Início/Padrão), mostra apenas produtos que tem BADGE (selo)
         filtered = allProducts.filter(p => p.badge && p.badge.trim() !== '');
@@ -59,10 +67,10 @@ window.filterProducts = function (category = null) {
     renderProducts(filtered);
 
     // Scroll suave para a seção de produtos se houver interação
-    if (category || filtered.length < allProducts.length) {
+    if (category || categoryId || (filtered && filtered.length < allProducts.length)) {
         const productsSection = document.getElementById('products');
         if (productsSection) {
-            const headerOffset = 80;
+            const headerOffset = 100;
             const elementPosition = productsSection.getBoundingClientRect().top;
             const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
