@@ -47,7 +47,8 @@ window.filterProducts = function (category = null) {
         if (sectionTitle) sectionTitle.innerHTML = `Todos os <span class="gold-text">Produtos</span>`;
     } else if (category) {
         // Se escolheu uma categoria específica, mostra todos os produtos dessa categoria
-        filtered = allProducts.filter(p => p.category === category);
+        const targetCat = category.toLowerCase().trim();
+        filtered = allProducts.filter(p => p.category && p.category.toLowerCase().trim() === targetCat);
         if (sectionTitle) sectionTitle.innerHTML = `Categoria: <span class="gold-text">${category}</span>`;
     } else {
         // Caso contrário (Início/Padrão), mostra apenas produtos que tem BADGE (selo)
