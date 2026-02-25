@@ -345,6 +345,29 @@
             opacity: 1;
             transform: scale(1.05);
         }
+
+        /* Unavailable Size Style */
+        .size-btn.out-of-stock {
+            position: relative;
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: #eee !important;
+            color: #999 !important;
+            border-color: #ddd !important;
+            text-decoration: line-through;
+        }
+
+        .size-btn.out-of-stock::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 0, 0, 0.4);
+            transform: rotate(-25deg);
+        }
     </style>
 </head>
 
@@ -708,8 +731,11 @@
         const lens = document.getElementById("zoomLens");
         const result = document.getElementById("zoomResult");
         const container = document.getElementById("modalImageContainer");
+        const sizeContainer = document.querySelector('.size-btn').parentNode;
+        const colorContainer = document.querySelector('.color-options');
 
         let currentProductToken = null;
+        let currentProductData = null; // Guardar dados atuais do modal
 
         // Init Cart Count
         document.addEventListener('DOMContentLoaded', () => {
@@ -723,6 +749,7 @@
 
         // Abrir Modal com dados do Produto
         function openProductModal(data) {
+            currentProductData = data; // Salvar globalmente para o modal
             currentProductToken = data.yampi_token || null;
             const mainImg = document.getElementById("modalImage");
             mainImg.src = data.img;
@@ -763,9 +790,6 @@
             result.style.backgroundImage = `url('${data.img}')`;
 
             // RENDERIZAR VARIANTES (Tamanhos e Cores)
-            const sizeContainer = document.querySelector('.size-btn').parentNode;
-            const colorContainer = document.querySelector('.color-options');
-
             // Limpar containers
             sizeContainer.innerHTML = '';
             colorContainer.innerHTML = '';
@@ -796,7 +820,7 @@
                 if (sizes.length > 0) {
                     sizes.forEach((size, index) => {
                         const btn = document.createElement('button');
-                        btn.className = `size-btn ${index === 0 ? 'selected' : ''}`;
+                        btn.className = `size-btn`;
                         btn.innerText = size;
                         btn.onclick = () => selectSize(btn);
                         sizeContainer.appendChild(btn);
@@ -839,6 +863,7 @@
                         btn.onclick = () => {
                             selectColor(btn);
                             document.getElementById('selected-color-name').innerText = colorName;
+                            updateAvailableSizes(colorName); // Atualizar tamanhos para esta cor
 
                             // NEW: Mudar imagem se tiver
                             if (btn.dataset.image) {
@@ -857,7 +882,10 @@
                         colorContainer.appendChild(btn);
 
                         // Set initial color name
-                        if (index === 0) document.getElementById('selected-color-name').innerText = colorName;
+                        if (index === 0) {
+                            document.getElementById('selected-color-name').innerText = colorName;
+                            updateAvailableSizes(colorName); // Primeira cor inicial
+                        }
                     });
                 } else {
                     colorContainer.innerHTML = '<span style="color:#666; font-size: 0.9rem;">Cor Única</span>';
@@ -883,8 +911,49 @@
         window.selectColor = (btn) => {
             document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
-            if (btn.title) document.getElementById('selected-color-name').innerText = btn.title;
+            if (btn.title) {
+                document.getElementById('selected-color-name').innerText = btn.title;
+                updateAvailableSizes(btn.title);
+            }
         }
+
+        // Nova função para cruzar tamanhos sem estoque ou inexistentes para a cor
+        window.updateAvailableSizes = (selectedColor) => {
+            if (!currentProductData || !currentProductData.variants || currentProductData.variants.length === 0) return;
+
+            const sizeButtons = document.querySelectorAll('.size-btn');
+            let firstAvailableSelected = false;
+            let currentSelected = document.querySelector('.size-btn.selected');
+
+            sizeButtons.forEach(btn => {
+                const size = btn.innerText;
+                // Procurar se existe essa variante COM estoque
+                const variant = currentProductData.variants.find(v =>
+                    v.color && v.color.toLowerCase() === selectedColor.toLowerCase() &&
+                    v.size === size &&
+                    (v.qty > 0 || v.qty === undefined || v.qty === null)
+                );
+
+                if (variant) {
+                    btn.classList.remove('out-of-stock');
+                    btn.disabled = false;
+
+                    // Se não houver nada selecionado ou se o que estava selecionado agora está "out-of-stock"
+                    // selecionamos o primeiro disponível
+                    if (!firstAvailableSelected && (!currentSelected || currentSelected.classList.contains('out-of-stock'))) {
+                        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        firstAvailableSelected = true;
+                    } else if (btn === currentSelected) {
+                        firstAvailableSelected = true; // Mantém a seleção atual se ela for válida
+                    }
+                } else {
+                    btn.classList.add('out-of-stock');
+                    btn.classList.remove('selected');
+                    btn.disabled = true;
+                }
+            });
+        };
 
         // Ações de Compra
         window.checkout = () => {
