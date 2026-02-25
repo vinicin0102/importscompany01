@@ -917,7 +917,7 @@
             }
         }
 
-        // Nova função para cruzar tamanhos sem estoque ou inexistentes para a cor
+        // Nova função para cruzar tamanhos existentes para a cor (conforme cadastro no Admin)
         window.updateAvailableSizes = (selectedColor) => {
             if (!currentProductData || !currentProductData.variants || currentProductData.variants.length === 0) return;
 
@@ -926,28 +926,29 @@
             let currentSelected = document.querySelector('.size-btn.selected');
 
             sizeButtons.forEach(btn => {
-                const size = btn.innerText;
-                // Procurar se existe essa variante COM estoque
-                const variant = currentProductData.variants.find(v =>
-                    v.color && v.color.toLowerCase() === selectedColor.toLowerCase() &&
-                    v.size === size &&
-                    (v.qty > 0 || v.qty === undefined || v.qty === null)
+                const sizeText = btn.innerText.trim();
+
+                // Procurar se existe essa variante cadastrada para a cor selecionada
+                // Removemos a trava de qty > 0 para respeitar exatamente o que foi criado no Admin
+                const variantExists = currentProductData.variants.find(v =>
+                    v.color && v.color.trim().toLowerCase() === selectedColor.trim().toLowerCase() &&
+                    v.size && v.size.trim() === sizeText
                 );
 
-                if (variant) {
+                if (variantExists) {
                     btn.classList.remove('out-of-stock');
                     btn.disabled = false;
 
-                    // Se não houver nada selecionado ou se o que estava selecionado agora está "out-of-stock"
-                    // selecionamos o primeiro disponível
+                    // Se o botão atual era o selecionado, mantemos a seleção ativa
                     if (!firstAvailableSelected && (!currentSelected || currentSelected.classList.contains('out-of-stock'))) {
                         document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
                         btn.classList.add('selected');
                         firstAvailableSelected = true;
                     } else if (btn === currentSelected) {
-                        firstAvailableSelected = true; // Mantém a seleção atual se ela for válida
+                        firstAvailableSelected = true;
                     }
                 } else {
+                    // Se não existe essa combinação no Admin para esta cor, aí sim cortamos
                     btn.classList.add('out-of-stock');
                     btn.classList.remove('selected');
                     btn.disabled = true;
