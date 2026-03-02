@@ -12,6 +12,18 @@ function checkAuth() {
         window.location.href = '/admin/login.html';
         return false;
     }
+
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp && (payload.exp * 1000) < Date.now()) {
+            logout();
+            return false;
+        }
+    } catch (e) {
+        logout();
+        return false;
+    }
+
     return true;
 }
 
