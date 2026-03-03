@@ -124,12 +124,20 @@ async function initBannerCarousel() {
         css.id = 'banner-responsive-css';
         css.innerHTML = `
             .carousel-slide {
-                background-image: var(--bg-desktop, none);
+                background-image: var(--bg-desktop, none) !important;
+                background-position: center center !important;
                 transition: background-image 0.3s ease-in-out;
             }
             @media (max-width: 768px) {
                 .carousel-slide {
-                    background-image: var(--bg-mobile, var(--bg-desktop, none));
+                    background-image: var(--bg-mobile, var(--bg-desktop, none)) !important;
+                    background-position: center center !important;
+                }
+                /* Quando não há imagem mobile dedicada, usar contain para não cortar */
+                .carousel-slide.no-mobile-img {
+                    background-size: contain !important;
+                    background-repeat: no-repeat;
+                    background-color: #0f172a;
                 }
             }
         `;
@@ -179,7 +187,7 @@ async function initBannerCarousel() {
 
             // Resolve Images
             let imgDesktop = banner.image || 'images/placeholder.png';
-            let imgMobile = banner.image_mobile || imgDesktop;
+            let imgMobile = banner.image_mobile || null;
 
             // Fix relative paths if needed
             if (imgDesktop && !imgDesktop.startsWith('http') && !imgDesktop.startsWith('/')) imgDesktop = imgDesktop;
@@ -187,7 +195,12 @@ async function initBannerCarousel() {
 
             // Set CSS Variables directly on the element
             slide.style.setProperty('--bg-desktop', `url('${imgDesktop}')`);
-            slide.style.setProperty('--bg-mobile', `url('${imgMobile}')`);
+            slide.style.setProperty('--bg-mobile', `url('${imgMobile || imgDesktop}')`);
+
+            // Marca slides que não têm imagem mobile dedicada
+            if (!banner.image_mobile) {
+                slide.classList.add('no-mobile-img');
+            }
 
             // Apply base styles
             slide.style.backgroundPosition = 'center center';
