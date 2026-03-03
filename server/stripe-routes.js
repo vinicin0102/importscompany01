@@ -80,7 +80,7 @@ router.post('/platform-checkout', async (req, res) => {
                     shipping_rate_data: {
                         type: 'fixed_amount',
                         fixed_amount: {
-                            amount: typeof shippingAmount === 'number' ? shippingAmount : parsePrice(shippingAmount),
+                            amount: typeof shippingAmount === 'number' ? Math.round(shippingAmount * 100) : parsePrice(shippingAmount),
                             currency: 'brl',
                         },
                         display_name: shippingName || 'Frete Padrão',
