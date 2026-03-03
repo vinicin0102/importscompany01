@@ -408,25 +408,18 @@
                 }
 
                 // 2. Stripe Checkout (Plataforma)
-                // Add Shipping Cost as Item if selected
-                const checkoutCart = [...cart];
-                if (window.selectedShipping && window.selectedShipping.price > 0) {
-                    // Formata o preço como string para o backend processar corretamente (multiplicar por 100)
-                    const priceString = `R$ ${window.selectedShipping.price.toFixed(2).replace('.', ',')}`;
+                const payload = { items: cart };
 
-                    checkoutCart.push({
-                        title: `Frete: ${window.selectedShipping.name}`,
-                        price: priceString,
-                        quantity: 1,
-                        // Dummy image for shipping
-                        img: 'https://cdn-icons-png.flaticon.com/512/756/756940.png'
-                    });
+                // Add Shipping Cost via native Stripe fields if selected
+                if (window.selectedShipping && window.selectedShipping.price > 0) {
+                    payload.shippingAmount = window.selectedShipping.price; // O backend vai converter multiplicando por 100
+                    payload.shippingName = window.selectedShipping.name;
                 }
 
                 const response = await fetch('/api/connect/platform-checkout', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ items: checkoutCart })
+                    body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();

@@ -48,17 +48,20 @@ const writeData = (file, data) => fs.writeFileSync(file, JSON.stringify(data, nu
 // -----------------------------------------------------------------------------
 router.post('/platform-checkout', async (req, res) => {
     try {
-        const { items } = req.body;
+        const { items, shippingAmount, shippingName } = req.body;
         if (!items?.length) return res.status(400).json({ error: 'No items' });
 
         const parsePrice = (p) => typeof p === 'number' ? p : Math.round(parseFloat(p.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'], // Fallback seguro para evitar erro 400
+        const sessionConfig = {
+            payment_method_types: ['card', 'pix'], // PIX liberado além do cartão
             line_items: items.map(item => ({
                 price_data: {
                     currency: 'brl',
-                    product_data: { name: item.title },
+                    product_data: {
+                        name: item.title,
+                        images: item.image ? [item.image] : []
+                    },
                     unit_amount: parsePrice(item.price),
                 },
                 quantity: item.quantity || 1,
@@ -68,9 +71,32 @@ router.post('/platform-checkout', async (req, res) => {
             cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
             shipping_address_collection: { allowed_countries: ['BR'] },
             phone_number_collection: { enabled: true },
-        });
+        };
+
+        // Adiciona a cobrança de frete se for enviada na requisição
+        if (shippingAmount !== undefined) {
+            sessionConfig.shipping_options = [
+                {
+                    shipping_rate_data: {
+                        type: 'fixed_amount',
+                        fixed_amount: {
+                            amount: typeof shippingAmount === 'number' ? shippingAmount : parsePrice(shippingAmount),
+                            currency: 'brl',
+                        },
+                        display_name: shippingName || 'Frete Padrão',
+                        delivery_estimate: {
+                            minimum: { unit: 'business_day', value: 3 },
+                            maximum: { unit: 'business_day', value: 10 },
+                        },
+                    },
+                },
+            ];
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionConfig);
         res.json({ url: session.url });
     } catch (e) {
+        console.error("Erro no checkout:", e);
         res.status(500).json({ error: e.message });
     }
 });
