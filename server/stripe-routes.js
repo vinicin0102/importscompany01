@@ -54,7 +54,7 @@ router.post('/platform-checkout', async (req, res) => {
         const parsePrice = (p) => typeof p === 'number' ? p : Math.round(parseFloat(p.replace('R$', '').replace(/\./g, '').replace(',', '.')) * 100);
 
         const sessionConfig = {
-            payment_method_types: ['card', 'pix'], // PIX liberado além do cartão
+            payment_method_types: ['card'], // Removido o 'pix' pois ainda não está ativo no seu Dashboard
             line_items: items.map(item => ({
                 price_data: {
                     currency: 'brl',
