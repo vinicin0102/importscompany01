@@ -23,8 +23,10 @@
         /* Carousel Styles */
         .hero {
             position: relative;
-            height: 100vh;
-            min-height: 600px;
+            width: 100%;
+            aspect-ratio: 16/7;
+            /* Proporção desktop aprox 2:1 ou 16:7 */
+            height: auto;
             overflow: hidden;
             background: #000;
         }
@@ -175,9 +177,17 @@
 
         @media(max-width: 768px) {
             .hero {
-                height: 85vh;
-                /* Aumentado para caber o banner vertical inteiro */
-                min-height: 500px;
+                height: 100vh;
+                min-height: 600px;
+                aspect-ratio: auto;
+                /* Deixa o flex/vh controlar a altura para não forçar corte em telas de diferentes tamanhos */
+            }
+
+            .carousel-slide {
+                background-position: center center !important;
+                background-size: cover !important;
+                /* Garante que preencha toda a tela verticalmente sem distorcer, centrando no produto */
+                background-repeat: no-repeat;
             }
 
             .hero-content {
