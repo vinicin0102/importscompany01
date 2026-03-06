@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /server/
+Allow: /
+
+Sitemap: https://importscompany01.vercel.app/sitemap.xml
