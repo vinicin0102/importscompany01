@@ -464,8 +464,10 @@
                 </div>
             </div>
 
-            <button class="carousel-btn prev" onclick="moveSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-            <button class="carousel-btn next" onclick="moveSlide(1)"><i class="fas fa-chevron-right"></i></button>
+            <button class="carousel-btn prev" aria-label="Imagem Anterior" onclick="moveSlide(-1)"><i
+                    class="fas fa-chevron-left"></i></button>
+            <button class="carousel-btn next" aria-label="Próxima Imagem" onclick="moveSlide(1)"><i
+                    class="fas fa-chevron-right"></i></button>
 
             <div class="carousel-indicators" id="hero-indicators"></div>
         </div>
@@ -656,7 +658,7 @@
     <!-- Product Preview Modal -->
     <div id="productModal" class="product-modal">
         <div class="modal-content">
-            <span class="modal-close">&times;</span>
+            <span class="modal-close" aria-label="Fechar Detalhes" role="button" tabindex="0">&times;</span>
             <div class="modal-grid">
 
                 <!-- Image Side with Zoom -->

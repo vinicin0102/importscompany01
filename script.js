@@ -4,7 +4,7 @@
    ======================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ Site Premium Carregado!');
+    // Production code
 
     initHeader();
     initMobileMenu();
