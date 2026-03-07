@@ -48,6 +48,11 @@ body {
     text-transform: uppercase;
 }
 
+/* Hide mobile nav on desktop by default */
+.mobile-nav {
+    display: none;
+}
+
 /* ---- Cart Count Pulse ---- */
 .cart-count {
     box-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
