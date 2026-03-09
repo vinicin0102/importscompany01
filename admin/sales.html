@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Vendas | Imports Company Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d27;
+            --bg-card: #222535;
+            --bg-hover: #2a2e3f;
+            --border: #2e3347;
+            --text-primary: #f0f0f5;
+            --text-secondary: #8b8fa3;
+            --accent: #6c5ce7;
+            --accent-hover: #7d6ff0;
+            --success: #00b894;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --gold: #c9a84c;
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* ====== SIDEBAR ====== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-brand h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            flex: 1;
+        }
+
+        .nav-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+            border-left-color: var(--accent);
+        }
+
+        .nav-menu a.active {
+            color: var(--accent);
+        }
+
+        .sidebar-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-footer a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 8px 0;
+            transition: color 0.2s;
+        }
+
+        .sidebar-footer a:hover {
+            color: var(--success);
+        }
+
+        /* ====== MAIN CONTENT ====== */
+        .main {
+            margin-left: 250px;
+            padding: 32px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 14px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            padding: 6px 12px;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .data-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .table-image {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* ====== MODAL ====== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow);
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .upload-area img {
+            max-width: 100%;
+            border-radius: 8px;
+            display: none;
+        }
+
+        /* Formatação do toast de js/admin.js */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h2><i class="fas fa-crown"></i> <span>Imports Co.</span></h2>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/admin/index.html"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a></li>
+            <li><a href="/admin/products.html"><i class="fas fa-box"></i> <span>Produtos</span></a></li>
+            <li><a href="/admin/categories.html"><i class="fas fa-tags"></i> <span>Categorias</span></a></li>
+            <li><a href="/admin/banners.html"><i class="fas fa-images"></i> <span>Banners</span></a></li>
+            <li><a href="/admin/stock.html"><i class="fas fa-warehouse"></i> <span>Estoque</span></a></li>
+            <li><a href="/admin/sales.html" class="active"><i class="fas fa-cash-register"></i> <span>Vendas</span></a>
+            </li>
+            <li><a href="/admin/settings.html"><i class="fas fa-cog"></i> <span>Configurações</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="/" target="_blank"><i class="fas fa-external-link-alt"></i> <span>Ver Loja</span></a>
+            <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> <span>Sair</span></a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+        <div class="page-header">
+            <h1>Controle de Vendas (Atendimento)</h1>
+            <button class="btn btn-primary" onclick="openSaleModal()">
+                <i class="fas fa-plus"></i> Registrar Venda
+            </button>
+        </div>
+
+        <div class="toolbar">
+            <div style="color: var(--text-secondary);">
+                Histórico de vendas registradas pelo atendimento
+            </div>
+            <button class="btn btn-success" onclick="exportToCSV()">
+                <i class="fas fa-file-csv"></i> Exportar Dados do Mês
+            </button>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Foto</th>
+                    <th>Produto</th>
+                    <th>Atendente</th>
+                    <th>Forma Pgto</th>
+                    <th>Valor</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="sales-table-body">
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">Carregando vendas...</td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+
+    <!-- MODAL REGISTRO DE VENDA -->
+    <div class="modal-overlay" id="sale-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Registrar Venda</h2>
+                <button type="button" class="btn btn-secondary"
+                    style="border:none;background:transparent;color:white;cursor:pointer" onclick="closeSaleModal()"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <form id="sale-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Atendente / Vendedor</label>
+                        <input type="text" id="sale_attendant" required placeholder="Ex: Maria" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Foto do Produto (Comprovante/Item)</label>
+                        <div class="upload-area" id="sale-upload">
+                            <i class="fas fa-cloud-upload-alt" style="font-size:24px; color:var(--text-secondary)"></i>
+                            <p style="margin-top:10px; font-size:14px; color:var(--text-secondary)">Clique para anexar
+                                foto</p>
+                            <img id="sale-preview" src="">
+                            <input type="file" id="sale_photo_input" style="display:none" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome do Produto / Descrição</label>
+                        <input type="text" id="sale_product" required placeholder="Ex: iPhone 15 Pro Max">
+                    </div>
+                    <div class="form-group">
+                        <label>Forma de Pagamento</label>
+                        <select id="sale_payment" required>
+                            <option value="PIX">PIX</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="Cartão de Débito">Cartão de Débito</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Link de Pagamento">Link de Pagamento</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor da Venda (R$)</label>
+                        <input type="number" step="0.01" id="sale_value" required placeholder="0.00">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" style="background:var(--bg-hover); color:white;"
+                        onclick="closeSaleModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-sale">Salvar Venda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/admin/js/admin.js"></script>
+    <script>
+        let currentSales = [];
+        let uploadPhotoUrl = '';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+            loadSales();
+        });
+
+        async function loadSales() {
+            try {
+                const sales = await apiRequest('/api/sales');
+                currentSales = sales;
+                renderSales(sales);
+            } catch (error) {
+                console.error('Erro ao carregar:', error);
+                document.getElementById('sales-table-body').innerHTML = `<tr><td colspan="7" style="text-align: center;">Erro ao carregar vendas</td></tr>`;
+            }
+        }
+
+        function renderSales(data) {
+            const tbody = document.getElementById('sales-table-body');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">Nenhuma venda registrada.</td></tr>`;
+                return;
+            }
+
+            data.forEach(sale => {
+                const dateObj = new Date(sale.sale_date || sale.created_at);
+                const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${dateStr}</td>
+                    <td><img src="${sale.product_photo || '/images/no-image.png'}" class="table-image" alt="${sale.product_name}"></td>
+                    <td><strong>${sale.product_name}</strong></td>
+                    <td>${sale.attendant_name}</td>
+                    <td><span style="background: var(--bg-hover); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${sale.payment_method}</span></td>
+                    <td style="color:var(--success); font-weight:600;">R$ ${parseFloat(sale.sale_value).toFixed(2).replace('.', ',')}</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteSale('${sale.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openSaleModal() {
+            document.getElementById('sale-form').reset();
+            uploadPhotoUrl = '';
+            document.getElementById('sale-preview').style.display = 'none';
+            document.getElementById('sale-upload').querySelector('i').style.display = 'inline-block';
+            document.getElementById('sale-upload').querySelector('p').style.display = 'block';
+            // Auto complete attendant se houver salvo no cache na ultima vez
+            const lastAttendant = localStorage.getItem('last_attendant') || '';
+            if (lastAttendant) document.getElementById('sale_attendant').value = lastAttendant;
+
+            document.getElementById('sale-modal').classList.add('active');
+        }
+
+        function closeSaleModal() {
+            document.getElementById('sale-modal').classList.remove('active');
+        }
+
+        // Upload de foto
+        document.getElementById('sale-upload').addEventListener('click', () => {
+            document.getElementById('sale_photo_input').click();
+        });
+
+        document.getElementById('sale_photo_input').addEventListener('change', async (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const btnSave = document.getElementById('btn-save-sale');
+                btnSave.disabled = true;
+                btnSave.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Enviando...';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    const token = localStorage.getItem('adminToken');
+
+                    const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    if (res.ok) {
+                        uploadPhotoUrl = data.path;
+                        const preview = document.getElementById('sale-preview');
+                        preview.src = uploadPhotoUrl;
+                        preview.style.display = 'block';
+                        document.getElementById('sale-upload').querySelector('i').style.display = 'none';
+                        document.getElementById('sale-upload').querySelector('p').style.display = 'none';
+                        showToast('Foto salva!');
+                    } else throw new Error(data.error);
+                } catch (err) {
+                    showToast(err.message || 'Erro no upload', 'error');
+                } finally {
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = 'Salvar Venda';
+                }
+            }
+        });
+
+        // Submit Form
+        document.getElementById('sale-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const saleData = {
+                attendant_name: document.getElementById('sale_attendant').value.trim(),
+                product_name: document.getElementById('sale_product').value.trim(),
+                product_photo: uploadPhotoUrl || '/images/no-image.png',
+                payment_method: document.getElementById('sale_payment').value,
+                sale_value: parseFloat(document.getElementById('sale_value').value)
+            };
+
+            // Salva nome do atendente pro proximo
+            localStorage.setItem('last_attendant', saleData.attendant_name);
+
+            const btnSave = document.getElementById('btn-save-sale');
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Salvando...';
+
+            try {
+                await apiRequest('/api/sales', 'POST', saleData);
+                showToast('Venda registrada com sucesso!');
+                closeSaleModal();
+                loadSales();
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = 'Salvar Venda';
+            }
+        });
+
+        async function deleteSale(id) {
+            if (!confirm('Tem certeza que deseja apagar este registro de venda?')) return;
+            try {
+                await apiRequest(`/api/sales/${id}`, 'DELETE');
+                showToast('Venda removida');
+                loadSales();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        // Exportar para CSV
+        function exportToCSV() {
+            if (currentSales.length === 0) {
+                showToast('Nenhum dado para exportar', 'error');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            // Cabecalho
+            csvContent += "Data Hora,Atendente,Produto,Valor,Metodo de Pagamento,URL da Foto\n";
+
+            currentSales.forEach(row => {
+                const dateObj = new Date(row.sale_date || row.created_at);
+                const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString();
+
+                // Tratar virgulas em strings para CSV
+                const prodName = '"' + String(row.product_name).replace(/"/g, '""') + '"';
+                const attName = '"' + String(row.attendant_name).replace(/"/g, '""') + '"';
+                const photo = '"' + String(row.product_photo) + '"';
+
+                csvContent += `${dateStr},${attName},${prodName},${row.sale_value},${row.payment_method},${photo}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Vendas_Atendimento_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+
+</html>

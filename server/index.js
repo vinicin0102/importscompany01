@@ -392,6 +392,41 @@ app.put('/api/settings', authMiddleware, async (req, res) => {
 });
 
 // =============================================
+// ATTENDANT SALES ROUTES
+// =============================================
+
+app.get('/api/sales', authMiddleware, async (req, res) => {
+    const { data, error } = await supabase
+        .from('attendant_sales')
+        .select('*')
+        .order('id', { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
+app.post('/api/sales', authMiddleware, async (req, res) => {
+    const { data, error } = await supabase
+        .from('attendant_sales')
+        .insert([req.body])
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data);
+});
+
+app.delete('/api/sales/:id', authMiddleware, async (req, res) => {
+    const { error } = await supabase
+        .from('attendant_sales')
+        .delete()
+        .eq('id', req.params.id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Venda removida com sucesso' });
+});
+
+// =============================================
 // DASHBOARD STATS
 // =============================================
 
