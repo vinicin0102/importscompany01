@@ -1416,7 +1416,7 @@
             try {
                 for (const file of files) {
                     await new Promise((resolve) => {
-                        openCropper(file, 1 / 1, async (croppedFile) => {
+                        openCropper(file, NaN, async (croppedFile) => {
                             addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                             addBtn.style.pointerEvents = 'none';
 
