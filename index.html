@@ -694,12 +694,6 @@
         // ============================================
         (function() {
             const splash = document.getElementById('splashScreen');
-            
-            // Só exibe uma vez por sessão
-            if (sessionStorage.getItem('splashShown')) {
-                splash.classList.add('hidden');
-                return;
-            }
 
             // Previne scroll durante a animação
             document.body.style.overflow = 'hidden';
@@ -773,7 +767,6 @@
             // Fase 5: Remover do DOM
             setTimeout(() => {
                 splash.classList.add('hidden');
-                sessionStorage.setItem('splashShown', 'true');
             }, 4000);
         })();
     </script>
