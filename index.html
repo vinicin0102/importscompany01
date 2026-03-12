@@ -771,6 +771,112 @@
         })();
     </script>
 
+    <!-- Page Transition Overlay (for navigating between pages) -->
+    <div id="pageTransitionOverlay" class="page-transition-overlay">
+        <div class="transition-plane"><i class="fas fa-plane"></i></div>
+        <div class="transition-logo-mini"><img src="images/logo.jpg" alt="IC"></div>
+    </div>
+
+    <style>
+        /* Page Transition Overlay */
+        .page-transition-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 40%, #020617 100%);
+            z-index: 99998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            overflow: hidden;
+        }
+        .page-transition-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .transition-plane {
+            font-size: 3rem; color: #c5a059;
+            filter: drop-shadow(0 0 25px rgba(197, 160, 89, 0.9));
+            animation: transitionPlaneFly 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes transitionPlaneFly {
+            0% { transform: translate(-50vw, 20vh) rotate(-15deg); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translate(60vw, -30vh) rotate(-25deg); opacity: 0.3; }
+        }
+        .transition-logo-mini {
+            position: absolute;
+            width: 80px; height: 80px;
+            opacity: 0;
+            animation: miniLogoAppear 0.6s ease-out 0.4s forwards;
+        }
+        .transition-logo-mini img {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+            border: 2px solid #c5a059;
+            box-shadow: 0 0 40px rgba(197, 160, 89, 0.4);
+        }
+        @keyframes miniLogoAppear {
+            0% { opacity: 0; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+
+    <script>
+        // Page Transition - Intercept internal links
+        (function() {
+            function showTransitionAndNavigate(url) {
+                const overlay = document.getElementById('pageTransitionOverlay');
+                if (!overlay) { window.location.href = url; return; }
+
+                // Reset animation by cloning
+                const planeEl = overlay.querySelector('.transition-plane');
+                const logoEl = overlay.querySelector('.transition-logo-mini');
+                const newPlane = planeEl.cloneNode(true);
+                const newLogo = logoEl.cloneNode(true);
+                planeEl.replaceWith(newPlane);
+                logoEl.replaceWith(newLogo);
+
+                overlay.classList.add('active');
+                setTimeout(() => { window.location.href = url; }, 800);
+            }
+
+            document.addEventListener('click', (e) => {
+                const link = e.target.closest('a');
+                if (!link) return;
+
+                const href = link.getAttribute('href');
+                if (!href) return;
+
+                // Skip anchors, external, special links
+                if (href.startsWith('#') ||
+                    href.startsWith('javascript:') ||
+                    href.startsWith('mailto:') ||
+                    href.startsWith('tel:') ||
+                    href.startsWith('https://wa.me') ||
+                    href.startsWith('https://checkout.') ||
+                    href.includes('stripe.com') ||
+                    href.includes('yampi.com') ||
+                    link.target === '_blank') {
+                    return;
+                }
+
+                // Only intercept internal page navigation
+                if (href.endsWith('.html') ||
+                    href === '/' ||
+                    (href.startsWith('/') && !href.startsWith('#'))) {
+                    e.preventDefault();
+                    showTransitionAndNavigate(href);
+                }
+            });
+
+            window.navigateWithTransition = showTransitionAndNavigate;
+        })();
+    </script>
+
     <!-- Header -->
     <header class="header" id="header">
         <div class="container header-content">
