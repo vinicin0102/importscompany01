@@ -133,11 +133,10 @@ async function initBannerCarousel() {
                     background-image: var(--bg-mobile, var(--bg-desktop, none)) !important;
                     background-position: center center !important;
                 }
-                /* Quando não há imagem mobile dedicada, usar contain para não cortar */
+                /* Mobile banners will now use cover to fill the 9:16 aspect ratio properly */
                 .carousel-slide.no-mobile-img {
-                    background-size: contain !important;
-                    background-repeat: no-repeat;
-                    background-color: #0f172a;
+                    background-size: cover !important;
+                    background-position: center center !important;
                 }
             }
         `;
