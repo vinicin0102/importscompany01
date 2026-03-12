@@ -268,4 +268,36 @@ router.get('/products', (req, res) => {
     res.json(readData(PRODUCTS_FILE));
 });
 
+// GET /api/connect/dashboard-stats
+// Endpoint para o admin dashboard pegar vendas reais do dia
+router.get('/dashboard-stats', async (req, res) => {
+    try {
+        if (!stripe) return res.json({ todaySales: 0 });
+
+        // Calcula UNIX timestamp para o início de hoje
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const startOfDayUnix = Math.floor(startOfDay.getTime() / 1000);
+
+        // Busca sessions do stripe criadas hoje
+        const sessions = await stripe.checkout.sessions.list({
+            created: { gte: startOfDayUnix },
+            limit: 100 // Máximo padrão
+        });
+
+        let total = 0;
+        sessions.data.forEach(session => {
+            // Contabiliza apenas o que foi efetivamente pago
+            if (session.payment_status === 'paid' && session.amount_total) {
+                total += session.amount_total;
+            }
+        });
+
+        res.json({ todaySales: total / 100 }); // Converte de centavos para Real
+    } catch (error) {
+        console.error('Stats Stripe Error:', error);
+        res.json({ todaySales: 0, error: error.message });
+    }
+});
+
 module.exports = router;

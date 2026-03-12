@@ -4,6 +4,18 @@
    ======================================== */
 
 (function () {
+    // Analytics: Ping backend to track active users (every 30 seconds)
+    function pingActiveUser() {
+        let sid = sessionStorage.getItem('sessionId');
+        if (!sid) {
+            sid = Math.random().toString(36).substring(2, 10);
+            sessionStorage.setItem('sessionId', sid);
+        }
+        fetch('/api/ping?sid=' + sid).catch(() => {});
+    }
+    pingActiveUser(); // Send immediately on load
+    setInterval(pingActiveUser, 30000); // Ping every 30s
+
     // Verifica se já existe splash no DOM (index.html tem inline)
     if (document.getElementById('splashScreen')) return;
 

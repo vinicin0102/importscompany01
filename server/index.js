@@ -64,6 +64,30 @@ app.use(express.static(path.join(__dirname, '..')));
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
 app.use('/images', express.static(path.join(__dirname, '..', 'images')));
 
+// =============================================
+// ACTIVE USERS TRACKER
+// =============================================
+const activeUsers = new Map();
+
+app.get('/api/ping', (req, res) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    // Generate a session ID if possible (for simplicity, using IP + basic uniqueness if behind CDN, but IP works for small scale)
+    const sessionId = req.query.sid || ip;
+    activeUsers.set(sessionId, Date.now());
+    res.json({ ok: true });
+});
+
+app.get('/api/analytics', (req, res) => {
+    const now = Date.now();
+    // Remover usuários que não "pingaram" nos últimos 2 minutos
+    for (const [id, time] of activeUsers.entries()) {
+        if (now - time > 2 * 60 * 1000) activeUsers.delete(id);
+    }
+    // Para ter um número base de testes caso o site seja pequeno, se for 0 e em dev:
+    // const count = activeUsers.size === 0 ? 1 : activeUsers.size; 
+    res.json({ activeUsers: activeUsers.size });
+});
+
 // Global Check for Supabase on API routes
 app.use('/api', (req, res, next) => {
     // Se for rota de debug, permite passar

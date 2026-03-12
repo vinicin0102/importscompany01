@@ -278,19 +278,21 @@
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="color: #00b894; background: rgba(0,184,148,0.1);"><i
-                        class="fas fa-eye"></i></div>
+                <div class="stat-icon" style="color: #00b894; background: rgba(0,184,148,0.1);">
+                    <i class="fas fa-users"></i>
+                </div>
                 <div class="stat-info">
-                    <h3>Visualizações</h3>
-                    <div class="value">1.2k</div>
+                    <h3>Usuários Online</h3>
+                    <div class="value" id="active-users">0</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="color: #f39c12; background: rgba(243,156,18,0.1);"><i
-                        class="fas fa-shopping-cart"></i></div>
+                <div class="stat-icon" style="color: #f39c12; background: rgba(243,156,18,0.1);">
+                    <i class="fab fa-stripe-s"></i>
+                </div>
                 <div class="stat-info">
-                    <h3>Vendas Hoje</h3>
-                    <div class="value">R$ 0,00</div>
+                    <h3>Vendas Hoje (Stripe)</h3>
+                    <div class="value" id="today-sales">R$ 0,00</div>
                 </div>
             </div>
         </div>
@@ -302,14 +304,45 @@
         document.addEventListener('DOMContentLoaded', async () => {
             if (!checkAuth()) return;
 
+            // Fetch Products Count
             try {
-                // Carregar contagem de produtos
                 const products = await apiRequest('/api/products');
                 document.getElementById('total-products').textContent = products.length;
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
                 document.getElementById('total-products').textContent = '-';
             }
+
+            // Real-time Data Feed
+            async function fetchRealTimeData() {
+                try {
+                    // 1. Fetch Active Users
+                    const analyticsRes = await fetch('/api/analytics');
+                    if (analyticsRes.ok) {
+                        const analyticsData = await analyticsRes.json();
+                        document.getElementById('active-users').textContent = analyticsData.activeUsers || 0;
+                    }
+
+                    // 2. Fetch Stripe Sales
+                    // Adiciona header de Auth para garantir segurança se necessário, ou fetch direto caso público, mas melhor com apiRequest se o backend pedir.
+                    const stripeRes = await fetch('/api/connect/dashboard-stats', {
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    });
+                    if (stripeRes.ok) {
+                        const stripeData = await stripeRes.json();
+                        const sales = stripeData.todaySales || 0;
+                        document.getElementById('today-sales').textContent = sales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar dados em tempo real:', error);
+                }
+            }
+
+            // Loop a cada 10 segundos
+            fetchRealTimeData();
+            setInterval(fetchRealTimeData, 10000);
         });
     </script>
 </body>
