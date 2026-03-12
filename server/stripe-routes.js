@@ -271,6 +271,10 @@ router.get('/products', (req, res) => {
 // GET /api/connect/dashboard-stats
 // Endpoint para o admin dashboard pegar vendas reais do dia
 router.get('/dashboard-stats', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     try {
         if (!stripe) return res.json({ todaySales: 0 });
 
