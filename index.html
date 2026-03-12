@@ -388,6 +388,396 @@
 
 <body>
 
+    <!-- ============================================ -->
+    <!-- SPLASH SCREEN - Airplane Animation Intro     -->
+    <!-- ============================================ -->
+    <div id="splashScreen" class="splash-screen">
+        <!-- Partículas de estrelas no fundo -->
+        <div class="splash-stars" id="splashStars"></div>
+        
+        <!-- Avião voando -->
+        <div class="splash-plane" id="splashPlane">
+            <i class="fas fa-plane"></i>
+            <!-- Rastro dourado do avião -->
+            <div class="plane-trail"></div>
+        </div>
+        
+        <!-- Partículas de brilho que saem do avião -->
+        <div class="splash-particles" id="splashParticles"></div>
+        
+        <!-- Logo central -->
+        <div class="splash-logo" id="splashLogo">
+            <div class="logo-glow"></div>
+            <img src="images/logo.jpg" alt="Imports Company" class="splash-logo-img">
+            <div class="logo-ring"></div>
+        </div>
+        
+        <!-- Texto -->
+        <div class="splash-text" id="splashText">
+            <span class="splash-title">IMPORTS COMPANY</span>
+            <span class="splash-subtitle">Luxo & Exclusividade</span>
+        </div>
+    </div>
+
+    <style>
+        /* ==============================
+           SPLASH SCREEN STYLES 
+           ============================== */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 40%, #020617 100%);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            overflow: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .splash-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .splash-screen.hidden {
+            display: none;
+        }
+
+        /* Estrelas no fundo */
+        .splash-stars {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .splash-star {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: starTwinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.1; transform: scale(0.5); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        /* Avião */
+        .splash-plane {
+            position: absolute;
+            font-size: 2.8rem;
+            color: #c5a059;
+            filter: drop-shadow(0 0 25px rgba(197, 160, 89, 0.9));
+            transform: translate(-120vw, 40vh) rotate(-15deg);
+            z-index: 10;
+            opacity: 0;
+        }
+
+        .splash-plane.fly {
+            animation: planeFly 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes planeFly {
+            0% {
+                transform: translate(-120vw, 40vh) rotate(-15deg) scale(0.6);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            50% {
+                transform: translate(0vw, 0vh) rotate(-20deg) scale(1.2);
+                opacity: 1;
+            }
+            70% {
+                transform: translate(30vw, -15vh) rotate(-25deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(120vw, -50vh) rotate(-30deg) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* Rastro do avião */
+        .plane-trail {
+            position: absolute;
+            top: 50%;
+            right: 100%;
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(to left, rgba(197, 160, 89, 0.8), rgba(197, 160, 89, 0));
+            transform: translateY(-50%);
+            border-radius: 2px;
+            filter: blur(1px);
+        }
+
+        /* Partículas de brilho */
+        .splash-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .splash-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #c5a059;
+            border-radius: 50%;
+            opacity: 0;
+            filter: blur(1px);
+        }
+
+        .splash-particle.active {
+            animation: particleFade 1.5s ease-out forwards;
+        }
+
+        @keyframes particleFade {
+            0% { opacity: 1; transform: scale(1) translate(0, 0); }
+            100% { opacity: 0; transform: scale(0) translate(var(--px), var(--py)); }
+        }
+
+        /* Logo central */
+        .splash-logo {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            opacity: 0;
+            transform: scale(0.3);
+            z-index: 10;
+        }
+
+        .splash-logo.reveal {
+            animation: logoReveal 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes logoReveal {
+            0% { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+            60% { opacity: 1; transform: scale(1.1) rotate(3deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+
+        .splash-logo-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #c5a059;
+            box-shadow: 0 0 60px rgba(197, 160, 89, 0.5), 0 0 120px rgba(197, 160, 89, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Anel brilhante ao redor do logo */
+        .logo-ring {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            right: -15px;
+            bottom: -15px;
+            border: 2px solid rgba(197, 160, 89, 0.3);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        .splash-logo.reveal .logo-ring {
+            animation: ringPulse 2s ease-out 0.5s forwards;
+        }
+
+        @keyframes ringPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* Glow atrás do logo */
+        .logo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200%;
+            height: 200%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(197, 160, 89, 0.15) 0%, transparent 70%);
+            opacity: 0;
+            z-index: 1;
+        }
+
+        .splash-logo.reveal .logo-glow {
+            animation: glowAppear 1.5s ease-out 0.3s forwards;
+        }
+
+        @keyframes glowAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Texto */
+        .splash-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
+            opacity: 0;
+            transform: translateY(20px);
+            z-index: 10;
+        }
+
+        .splash-text.reveal {
+            animation: textReveal 0.8s ease-out forwards;
+        }
+
+        @keyframes textReveal {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .splash-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #c5a059;
+            letter-spacing: 8px;
+            text-shadow: 0 0 30px rgba(197, 160, 89, 0.4);
+        }
+
+        .splash-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 5px;
+            font-weight: 300;
+            text-transform: uppercase;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .splash-logo {
+                width: 120px;
+                height: 120px;
+            }
+
+            .splash-title {
+                font-size: 1.4rem;
+                letter-spacing: 5px;
+            }
+
+            .splash-subtitle {
+                font-size: 0.7rem;
+                letter-spacing: 3px;
+            }
+
+            .splash-plane {
+                font-size: 2rem;
+            }
+
+            .plane-trail {
+                width: 120px;
+            }
+        }
+    </style>
+
+    <script>
+        // ============================================
+        // SPLASH SCREEN LOGIC
+        // ============================================
+        (function() {
+            const splash = document.getElementById('splashScreen');
+            
+            // Só exibe uma vez por sessão
+            if (sessionStorage.getItem('splashShown')) {
+                splash.classList.add('hidden');
+                return;
+            }
+
+            // Previne scroll durante a animação
+            document.body.style.overflow = 'hidden';
+
+            // Criar estrelas no fundo
+            const starsContainer = document.getElementById('splashStars');
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.className = 'splash-star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = (Math.random() * 3 + 1) + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = (Math.random() * 3) + 's';
+                star.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                starsContainer.appendChild(star);
+            }
+
+            // Criar partículas
+            const particlesContainer = document.getElementById('splashParticles');
+            function spawnParticles() {
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => {
+                        const particle = document.createElement('div');
+                        particle.className = 'splash-particle';
+                        particle.style.left = (30 + Math.random() * 40) + '%';
+                        particle.style.top = (30 + Math.random() * 40) + '%';
+                        particle.style.setProperty('--px', (Math.random() * 100 - 50) + 'px');
+                        particle.style.setProperty('--py', (Math.random() * 100 - 50) + 'px');
+                        particle.style.width = (Math.random() * 5 + 2) + 'px';
+                        particle.style.height = particle.style.width;
+                        particlesContainer.appendChild(particle);
+
+                        requestAnimationFrame(() => particle.classList.add('active'));
+                        
+                        setTimeout(() => particle.remove(), 1500);
+                    }, i * 80);
+                }
+            }
+
+            // Timeline da animação
+            const plane = document.getElementById('splashPlane');
+            const logo = document.getElementById('splashLogo');
+            const text = document.getElementById('splashText');
+
+            // Fase 1: Avião voa (0ms)
+            setTimeout(() => {
+                plane.classList.add('fly');
+            }, 300);
+
+            // Fase 2: Partículas + Logo aparece (quando avião está no centro ~1.2s)
+            setTimeout(() => {
+                spawnParticles();
+            }, 1200);
+
+            setTimeout(() => {
+                logo.classList.add('reveal');
+            }, 1400);
+
+            // Fase 3: Texto aparece
+            setTimeout(() => {
+                text.classList.add('reveal');
+            }, 1900);
+
+            // Fase 4: Fade out e revelar site
+            setTimeout(() => {
+                splash.classList.add('fade-out');
+                document.body.style.overflow = '';
+            }, 3200);
+
+            // Fase 5: Remover do DOM
+            setTimeout(() => {
+                splash.classList.add('hidden');
+                sessionStorage.setItem('splashShown', 'true');
+            }, 4000);
+        })();
+    </script>
+
     <!-- Header -->
     <header class="header" id="header">
         <div class="container header-content">
