@@ -1395,6 +1395,9 @@
                         <button type="button" class="thumb-star ${index === 0 ? 'active' : ''}" onclick="setMainImage(${index})" title="Definir como principal">
                             <i class="fas fa-star"></i>
                         </button>
+                        <button type="button" class="thumb-edit" onclick="editExistingImage(${index})" title="Editar/Recortar" style="background: rgba(108, 92, 231, 0.8); color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; margin: 0 4px;">
+                            <i class="fas fa-crop-alt"></i>
+                        </button>
                         <button type="button" class="thumb-remove" onclick="removeImage(${index})" title="Remover">
                             <i class="fas fa-times"></i>
                         </button>
@@ -1402,6 +1405,37 @@
                 `;
                 grid.insertBefore(div, grid.firstChild); // Adicionar antes do botão '+'
             });
+        }
+
+        async function editExistingImage(index) {
+            try {
+                const imgUrl = currentGallery[index];
+                const imgSrc = imgUrl.startsWith('data:') || imgUrl.startsWith('http') ? imgUrl : `../${imgUrl}`;
+                
+                showToast("Preparando imagem para edição...", "info");
+                
+                // Precisamos fazer fetch da imagem para converter em Blob/File compatível com o Cropper
+                const response = await fetch(imgSrc, { cache: 'no-store' });
+                const blob = await response.blob();
+                const file = new File([blob], `edit_${Date.now()}.jpeg`, { type: blob.type || 'image/jpeg' });
+
+                // Abre cropper
+                openCropper(file, NaN, async (croppedFile) => {
+                    showToast("Enviando foto editada...", "info");
+                    try {
+                        const path = await uploadSingleProductImage(croppedFile);
+                        currentGallery[index] = path; // Substitui o array na mesma posição
+                        renderGallery();
+                        showToast("Foto editada com sucesso!", "success");
+                    } catch (err) {
+                        showToast("Erro ao salvar a foto editada.", "error");
+                        console.error(err);
+                    }
+                });
+            } catch (err) {
+                console.error('Erro ao baixar foto original:', err);
+                showToast("Não foi possível carregar esta foto para corte (Problema de Servidor/CORS)", "error");
+            }
         }
 
         async function handleMultiImageUpload(input) {
