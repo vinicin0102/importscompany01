@@ -32,7 +32,7 @@
         <div class="splash-particles" id="splashParticles"></div>
         <div class="splash-logo" id="splashLogo">
             <div class="logo-glow"></div>
-            <img src="/images/logo.jpg" alt="Imports Company" class="splash-logo-img">
+            <img src="/images/logo_nova.png" alt="Imports Company" class="splash-logo-img">
             <div class="logo-ring"></div>
         </div>
         <div class="splash-text" id="splashText">
@@ -248,7 +248,7 @@
     const transitionHTML = `
     <div id="pageTransitionOverlay" class="page-transition-overlay">
         <div class="transition-plane"><i class="fas fa-plane"></i></div>
-        <div class="transition-logo-mini"><img src="/images/logo.jpg" alt="IC"></div>
+        <div class="transition-logo-mini"><img src="/images/logo_nova.png" alt="IC"></div>
     </div>`;
     document.body.insertAdjacentHTML('afterbegin', transitionHTML);
 
@@ -375,3 +375,4 @@
     window.navigateWithTransition = showTransitionAndNavigate;
 
 })();
+
