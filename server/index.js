@@ -16,9 +16,12 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imports-company-secret-key-2026';
 
 // Supabase Client
-// Forçamos o uso das chaves corretas ignorando variáveis de ambiente problemáticas
-const supabaseUrl = 'https://ojoekqehkqhampsikuuk.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qb2VrcWVoa3FoYW1wc2lrdXVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDgyMTYwMSwiZXhwIjoyMDg2Mzk3NjAxfQ.oYxbsPRK6Yhu6O7YxQfol08YzCv-qY0oTsLpDXvxL7k';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error('ERRO: Variáveis SUPABASE_URL ou SUPABASE_KEY não configuradas no .env');
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -26,30 +29,25 @@ app.get('/api/sys-check', async (req, res) => {
     try {
         if (!supabase) throw new Error('Cliente Supabase não inicializado.');
 
-        // Diagnóstico de Chave
-        const keyParts = supabaseKey.split('.');
-        const keyDetails = {
-            length: supabaseKey.length,
-            parts: keyParts.length,
-            prefix: supabaseKey.substring(0, 10) + '...',
-            suffix: '...' + supabaseKey.substring(supabaseKey.length - 10),
-            isFormatValid: keyParts.length === 3
-        };
+        // Diagnóstico de Chave (Seguro)
+        const hasUrl = !!supabaseUrl;
+        const hasKey = !!supabaseKey;
+        const keyPartsCount = supabaseKey ? supabaseKey.split('.').length : 0;
 
         const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
         if (error) throw error;
 
-        res.json({ ok: true, msg: 'Supabase Conectado com Sucesso!', count, keyDetails });
+        res.json({ 
+            ok: true, 
+            msg: 'Supabase Conectado com Sucesso!', 
+            count, 
+            status: { hasUrl, hasKey, keyPartsCount } 
+        });
     } catch (err) {
         res.status(500).json({
             ok: false,
             error: err.message,
-            keyDebug: {
-                length: supabaseKey.length,
-                parts: supabaseKey.split('.').length,
-                prefix: supabaseKey.substring(0, 10) + '...'
-            },
-            hints: 'Se o erro for Invalid Compact JWS, a SERVICE_ROLE_KEY na Vercel está mal formatada.'
+            hint: 'Verifique se o arquivo .env contém as chaves SUPABASE_URL e SUPABASE_KEY corretamente.'
         });
     }
 });
