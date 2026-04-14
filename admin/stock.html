@@ -539,6 +539,10 @@
                             <input type="number" id="f-price" step="0.01" required placeholder="0.00">
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>Tamanho da Peça</label>
+                        <input type="text" id="f-size" placeholder="Ex: P, M, G, 42">
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Estoque Inicial</label>
@@ -775,14 +779,25 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
 
+            const stockQty = parseInt(document.getElementById('f-stock').value) || 0;
+            const sizeVal = document.getElementById('f-size').value.trim();
+
             const data = {
                 name: document.getElementById('f-name').value,
                 category: document.getElementById('f-category').value,
                 price: parseFloat(document.getElementById('f-price').value),
-                stock: parseInt(document.getElementById('f-stock').value) || 0,
+                stock: stockQty,
                 active: document.getElementById('f-active-sel').value === 'true',
                 image: 'images/placeholder.png'
             };
+
+            if (sizeVal) {
+                data.variants = [{
+                    size: sizeVal,
+                    color: '-',
+                    qty: stockQty
+                }];
+            }
 
             try {
                 const newProd = await apiRequest('/api/products', 'POST', data);
