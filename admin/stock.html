@@ -516,6 +516,8 @@
         </div>
     </main>
 
+    <input type="file" id="stock-image-file" style="display:none" accept="image/*" onchange="handleStockImageUpload(this)">
+
     <!-- MODAL NOVO PRODUTO -->
     <div class="modal-overlay" id="new-product-modal">
         <div class="modal-box">
@@ -555,6 +557,10 @@
                                 <option value="false">Nao - Oculto</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label>URL da Foto/Imagem</label>
+                        <input type="text" id="f-image" placeholder="Ex: https://link-da-imagem.com/foto.jpg">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -691,7 +697,12 @@
                     <tr>
                         <td>
                             <div class="product-cell">
-                                <img src="${r.imgSrc}" alt="" onerror="this.src='../images/placeholder.png'">
+                                <div style="position: relative; cursor: pointer; display: inline-block;" onclick="triggerStockImageUpload(${r.product.id})" title="Clique para adicionar/alterar foto">
+                                    <img src="${r.imgSrc}" alt="" onerror="this.src='../images/placeholder.png'" style="display: block;">
+                                    <div style="position: absolute; bottom: -5px; right: -5px; background: var(--accent); color: white; border-radius: 50%; padding: 4px; font-size: 10px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                                        <i class="fas fa-camera"></i>
+                                    </div>
+                                </div>
                                 <div class="info">
                                     <div class="name">${r.product.name}</div>
                                     <div class="cat">${r.catName}</div>
@@ -765,6 +776,56 @@
             }
         }
 
+        let uploadingProductId = null;
+
+        function triggerStockImageUpload(id) {
+            uploadingProductId = id;
+            document.getElementById('stock-image-file').click();
+        }
+
+        async function handleStockImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            input.value = ''; // reset
+            
+            // Reutiliza a funcao openCropper do admin.js
+            openCropper(file, NaN, async (croppedFile) => {
+                try {
+                    showToast("Fazendo upload da foto...", "info");
+                    const token = localStorage.getItem('adminToken');
+                    const formData = new FormData();
+                    formData.append('image', croppedFile);
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                    
+                    if (response.status === 401) {
+                        logout();
+                        return;
+                    }
+                    
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'Erro no upload');
+                    
+                    const newPath = data.path;
+                    
+                    // Atualiza o produto
+                    await apiRequest(`/api/products/${uploadingProductId}`, 'PUT', { image: newPath });
+                    const p = products.find(x => x.id === uploadingProductId);
+                    if (p) p.image = newPath;
+                    
+                    showToast('Foto atualizada com sucesso!');
+                    renderStock();
+                } catch (err) {
+                    showToast("Erro ao salvar foto: " + err.message, 'error');
+                }
+            });
+        }
+
         function openNewProductModal() {
             document.getElementById('new-product-modal').classList.add('active');
         }
@@ -788,7 +849,7 @@
                 price: parseFloat(document.getElementById('f-price').value),
                 stock: stockQty,
                 active: document.getElementById('f-active-sel').value === 'true',
-                image: 'images/placeholder.png'
+                image: document.getElementById('f-image').value.trim() || 'images/placeholder.png'
             };
 
             if (sizeVal) {
